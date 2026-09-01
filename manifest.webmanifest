@@ -1,0 +1,19 @@
+{
+  "name": "Opificio Vocale",
+  "short_name": "Opificio",
+  "description": "Ascolto, pratiche, manifesti e percorsi per una voce libera di scegliere.",
+  "lang": "it",
+  "start_url": "./#home",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5efe3",
+  "theme_color": "#173f3b",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
