@@ -5,7 +5,7 @@ Prima versione pubblica della web app di Opificio Vocale.
 ## Contenuti
 
 - Home
-- Manifesti: podcast e newsletter
+- Manifesti: player Spotify integrato e ultimo Manifesto leggibile nell’app
 - Audioteca: accesso generale e alle esperienze gratuite
 - Percorsi: Check Vocale, Reset Vocale, Vocal Boom e Vocal Hit
 
