@@ -56,6 +56,153 @@ const escapeHTML = value => String(value).replace(/[&<>'"]/g, character => ({
   "\"": "&quot;"
 }[character]));
 
+const FALLBACK_MANIFESTI = [{
+  id: "01",
+  route: "manifesto-1",
+  number: "01",
+  title: "La voce che hai imparato.",
+  date: "2026-08-25",
+  month: "Agosto 2026",
+  deck: "Una riflessione sulle abitudini vocali, il corpo e la possibilità di scegliere.",
+  excerpt: "La voce che usi più spesso non è necessariamente quella che ti appartiene di più. È quella che hai allenato di più.",
+  bodySource: "builtin",
+  bodyText: null,
+  previewUrl: null
+}];
+
+const LAST_SEEN_MANIFESTO_KEY = "opificio-last-seen-manifesto-v1";
+let manifestiArchive = [...FALLBACK_MANIFESTI];
+
+function latestManifesto() {
+  return manifestiArchive[0] || FALLBACK_MANIFESTI[0];
+}
+
+function manifestoRoute(item) {
+  return item.route || `manifesto-${String(item.id).replace(/[^a-z0-9-]/gi, "-")}`;
+}
+
+function manifestoForRoute(route) {
+  return manifestiArchive.find(item => manifestoRoute(item) === route);
+}
+
+function formatManifestoDate(dateValue, fallback = "") {
+  const date = new Date(`${dateValue}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return fallback;
+  return new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric" }).format(date)
+    .replace(/^./, character => character.toUpperCase());
+}
+
+function isRecentManifesto(item) {
+  const published = new Date(`${item.date}T12:00:00`).getTime();
+  if (!Number.isFinite(published)) return false;
+  const days = (Date.now() - published) / 86400000;
+  return days >= 0 && days <= 21;
+}
+
+function hasUnseenManifesto() {
+  try {
+    return localStorage.getItem(LAST_SEEN_MANIFESTO_KEY) !== String(latestManifesto().id);
+  } catch {
+    return false;
+  }
+}
+
+function markLatestManifestoSeen() {
+  try {
+    localStorage.setItem(LAST_SEEN_MANIFESTO_KEY, String(latestManifesto().id));
+  } catch {
+    // Il badge è facoltativo: l'app resta utilizzabile anche senza storage.
+  }
+}
+
+function newManifestoBadgeMarkup() {
+  return hasUnseenManifesto() ? '<span class="new-content-badge">Nuovo</span>' : "";
+}
+
+function manifestoArchiveMarkup() {
+  const latest = latestManifesto();
+  return `
+    <section class="latest-manifesto" aria-labelledby="latest-manifesto-title">
+      <p class="content-kicker"><span>Leggi</span> · Ultimo Manifesto ${isRecentManifesto(latest) ? '<b class="inline-new-badge">Nuovo</b>' : ""}</p>
+      <p class="manifesto-number">${escapeHTML(latest.number)}</p>
+      <h2 id="latest-manifesto-title">${escapeHTML(latest.title)}</h2>
+      <p class="manifesto-excerpt">${escapeHTML(latest.excerpt)}</p>
+      <button class="primary-button" type="button" data-route="${escapeHTML(manifestoRoute(latest))}">Leggi nell’app <span aria-hidden="true">→</span></button>
+    </section>
+    <section class="manifesto-library" aria-labelledby="manifesto-library-title">
+      <div class="library-heading">
+        <p class="content-kicker"><span>Archivio</span> · ${manifestiArchive.length} ${manifestiArchive.length === 1 ? "testo" : "testi"}</p>
+        <h2 id="manifesto-library-title">Da rileggere,<br>con calma.</h2>
+      </div>
+      <ol class="manifesto-list">
+        ${manifestiArchive.map(item => `
+          <li>
+            <button type="button" data-route="${escapeHTML(manifestoRoute(item))}">
+              <span class="archive-number">${escapeHTML(item.number)}</span>
+              <span class="archive-copy">
+                <small>${escapeHTML(item.month || formatManifestoDate(item.date))}</small>
+                <strong>${escapeHTML(item.title)}</strong>
+              </span>
+              <span class="arrow" aria-hidden="true">→</span>
+            </button>
+          </li>`).join("")}
+      </ol>
+    </section>`;
+}
+
+function bodyTextMarkup(value) {
+  const paragraphs = String(value || "").trim().split(/\n\s*\n/).filter(Boolean);
+  return paragraphs.map(paragraph => {
+    const lines = paragraph.split("\n").map(line => line.trim()).filter(Boolean);
+    const text = lines.join(" ");
+    const looksLikeHeading = lines.length === 1 && text.length < 90 && !/[.!?…]$/.test(text);
+    if (looksLikeHeading) return `<h2>${escapeHTML(text.replace(/^#+\s*/, ""))}</h2>`;
+    const className = lines.length > 1 ? ' class="voice-list"' : "";
+    return `<p${className}>${lines.map(escapeHTML).join("<br>")}</p>`;
+  }).join("");
+}
+
+function importedManifestoMarkup(item) {
+  const body = item.bodyText ? bodyTextMarkup(item.bodyText) : `
+    <p>Questo Manifesto è disponibile nella versione inviata via newsletter.</p>
+    ${item.previewUrl ? `<p><a class="primary-button" href="${escapeHTML(item.previewUrl)}" target="_blank" rel="noopener noreferrer">Apri il Manifesto <span aria-hidden="true">↗</span></a></p>` : ""}`;
+  return `
+    <article class="page manifesto-article" aria-labelledby="imported-manifesto-title">
+      <header class="manifesto-header">
+        <button class="back-button" type="button" data-route="manifesti"><span aria-hidden="true">←</span> Manifesti</button>
+        <p class="content-kicker"><span>Manifesto ${escapeHTML(item.number)}</span> · ${escapeHTML(item.month || formatManifestoDate(item.date))}</p>
+        <h1 id="imported-manifesto-title">${escapeHTML(item.title)}</h1>
+        <p class="manifesto-deck">${escapeHTML(item.deck || "Una riflessione per voci libere.")}</p>
+      </header>
+      <div class="article-body">
+        ${body}
+        <footer class="article-footer">
+          <p>Riccardo Primitivo Fiorucci</p>
+          <small>gender affirming vocal trainer · vocal coach · insegnante di canto</small>
+          <div class="article-actions">
+            <button class="primary-button" type="button" data-share-manifesto data-share-title="${escapeHTML(item.title)}">Condividi <span aria-hidden="true">↗</span></button>
+            <a class="primary-button secondary" href="${LINKS.manifesti}" target="_blank" rel="noopener noreferrer">Ricevi i prossimi <span aria-hidden="true">↗</span></a>
+          </div>
+          <p class="share-status" aria-live="polite"></p>
+        </footer>
+      </div>
+    </article>`;
+}
+
+async function loadManifestiArchive() {
+  try {
+    const response = await fetch("./manifesti.json", { cache: "no-store" });
+    if (!response.ok) throw new Error(`Archivio non disponibile (${response.status})`);
+    const data = await response.json();
+    if (!Array.isArray(data.items) || !data.items.length) throw new Error("Archivio vuoto");
+    manifestiArchive = data.items;
+    const route = currentRoute();
+    if (route === "home" || route === "manifesti" || route.startsWith("manifesto-")) render();
+  } catch (error) {
+    console.warn("Uso l'archivio Manifesti incluso nell'app.", error);
+  }
+}
+
 function localDayKey(date = new Date()) {
   const pad = value => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -141,6 +288,10 @@ function voiceDiaryMarkup() {
             <span>${entry.words.length ? entry.words.map(escapeHTML).join(" · ") : escapeHTML(entry.note)}</span>
           </li>`).join("")}
       </ol>
+      <div class="diary-actions">
+        <button type="button" data-diary-export>Esporta il diario <span aria-hidden="true">↓</span></button>
+        <button type="button" data-diary-delete>Cancella <span aria-hidden="true">×</span></button>
+      </div>
     </details>`;
 }
 
@@ -198,7 +349,7 @@ const pages = {
           <button class="home-section-card teal-card" type="button" data-route="manifesti">
             <span class="section-mark" aria-hidden="true">◎</span>
             <span><small>Podcast e testi</small><strong>Manifesti</strong></span>
-            <span aria-hidden="true">→</span>
+            <span class="section-card-end">${newManifestoBadgeMarkup()}<span aria-hidden="true">→</span></span>
           </button>
           <button class="home-section-card terracotta-card" type="button" data-route="audioteca">
             <span class="section-mark" aria-hidden="true">◌</span>
@@ -220,7 +371,7 @@ const pages = {
       <div class="panel teal">
         <p class="eyebrow">Pensieri per voci libere</p>
         <h1 id="manifesti-title">Manifesti<br>delle voci<br>libere.</h1>
-        <p class="panel-copy">Ascolta il podcast e leggi l’ultimo Manifesto senza uscire dall’app.</p>
+        <p class="panel-copy">Ascolta il podcast e attraversa tutti i Manifesti senza uscire dall’app.</p>
       </div>
       <section class="podcast-section" aria-labelledby="podcast-title">
         <p class="content-kicker"><span>Ascolta</span> · Podcast</p>
@@ -237,13 +388,7 @@ const pages = {
         ></iframe>
         <a class="text-link" href="${LINKS.spotify}" target="_blank" rel="noopener noreferrer">Apri su Spotify <span aria-hidden="true">↗</span></a>
       </section>
-      <section class="latest-manifesto" aria-labelledby="latest-manifesto-title">
-        <p class="content-kicker"><span>Leggi</span> · Ultimo Manifesto</p>
-        <p class="manifesto-number">01</p>
-        <h2 id="latest-manifesto-title">La voce che<br>hai imparato.</h2>
-        <p class="manifesto-excerpt">La voce che usi più spesso non è necessariamente quella che ti appartiene di più. È quella che hai allenato di più.</p>
-        <button class="primary-button" type="button" data-route="manifesto-1">Leggi nell’app <span aria-hidden="true">→</span></button>
-      </section>
+      ${manifestoArchiveMarkup()}
       <div class="newsletter-strip">
         <span>Ricevi i prossimi Manifesti</span>
         <a href="${LINKS.manifesti}" target="_blank" rel="noopener noreferrer">Iscriviti <span aria-hidden="true">↗</span></a>
@@ -354,7 +499,11 @@ const pages = {
         <footer class="article-footer">
           <p>Riccardo Primitivo Fiorucci</p>
           <small>gender affirming vocal trainer · vocal coach · insegnante di canto</small>
-          <a class="primary-button" href="${LINKS.manifesti}" target="_blank" rel="noopener noreferrer">Ricevi i prossimi Manifesti <span aria-hidden="true">↗</span></a>
+          <div class="article-actions">
+            <button class="primary-button" type="button" data-share-manifesto data-share-title="La voce che hai imparato.">Condividi <span aria-hidden="true">↗</span></button>
+            <a class="primary-button secondary" href="${LINKS.manifesti}" target="_blank" rel="noopener noreferrer">Ricevi i prossimi <span aria-hidden="true">↗</span></a>
+          </div>
+          <p class="share-status" aria-live="polite"></p>
         </footer>
       </div>
     </article>`,
@@ -367,10 +516,18 @@ const pages = {
         <p class="panel-copy">Pratiche guidate da attraversare con le cuffie, senza fretta e senza prestazione.</p>
       </div>
       <div class="audioteca-body">
-        <p>Uno spazio da esplorare: ascolti e pratiche vocali per fare esperienza prima ancora di cercare una risposta.</p>
-        <div class="button-row">
-          <a class="primary-button" href="${LINKS.audioteca}" target="_blank" rel="noopener noreferrer">Entra nell’audioteca <span aria-hidden="true">↗</span></a>
-          <a class="primary-button secondary" href="${LINKS.free}" target="_blank" rel="noopener noreferrer">Esperienze gratuite <span aria-hidden="true">↗</span></a>
+        <p class="audioteca-intro">Uno spazio da esplorare: ascolti e pratiche vocali per fare esperienza prima ancora di cercare una risposta.</p>
+        <div class="audioteca-portals">
+          <a class="audio-portal free-portal" href="${LINKS.free}" target="_blank" rel="noopener noreferrer">
+            <span class="portal-mark" aria-hidden="true">◌</span>
+            <span><small>Accesso libero</small><strong>Esperienze gratuite</strong><em>Inizia da un ascolto guidato.</em></span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
+          <a class="audio-portal full-portal" href="${LINKS.audioteca}" target="_blank" rel="noopener noreferrer">
+            <span class="portal-mark" aria-hidden="true">◎</span>
+            <span><small>Esplora</small><strong>Audioteca completa</strong><em>Tutte le pratiche disponibili.</em></span>
+            <span class="arrow" aria-hidden="true">↗</span>
+          </a>
         </div>
       </div>
     </section>`,
@@ -401,15 +558,57 @@ const pages = {
 
 function currentRoute() {
   const route = location.hash.replace("#", "");
-  return pages[route] ? route : "home";
+  return pages[route] || manifestoForRoute(route) ? route : "home";
 }
 
 let minuteInterval;
 
+function exportVoiceDiary() {
+  const diary = loadVoiceDiary();
+  if (!diary.length) return;
+  const lines = [
+    "IL MIO DIARIO DELLA VOCE — OPIFICIO VOCALE",
+    "",
+    ...diary.flatMap(entry => [
+      formatDiaryDate(entry.date),
+      entry.words.length ? entry.words.join(" · ") : "",
+      entry.note || "",
+      ""
+    ].filter((line, index) => line || index === 3))
+  ];
+  const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `diario-della-voce-${localDayKey()}.txt`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function shareManifesto(button) {
+  const title = button.dataset.shareTitle || document.title;
+  const url = `${location.origin}${location.pathname}#${currentRoute()}`;
+  const status = button.closest(".article-footer")?.querySelector(".share-status");
+  try {
+    if (navigator.share) {
+      await navigator.share({ title, text: `${title} — Manifesti delle voci libere`, url });
+      if (status) status.textContent = "Manifesto condiviso.";
+    } else {
+      await navigator.clipboard.writeText(url);
+      if (status) status.textContent = "Link copiato.";
+    }
+  } catch (error) {
+    if (error?.name !== "AbortError" && status) status.textContent = "Non sono riuscito a condividere il link.";
+  }
+}
+
 function render({ focus = false } = {}) {
   window.clearInterval(minuteInterval);
   const route = currentRoute();
-  app.innerHTML = pages[route]();
+  const importedManifesto = manifestoForRoute(route);
+  app.innerHTML = pages[route] ? pages[route]() : importedManifestoMarkup(importedManifesto);
   const titles = {
     home: "Opificio Vocale",
     manifesti: "Manifesti · Opificio Vocale",
@@ -417,13 +616,16 @@ function render({ focus = false } = {}) {
     audioteca: "Audioteca · Opificio Vocale",
     percorsi: "Percorsi · Opificio Vocale"
   };
-  document.title = titles[route];
+  document.title = titles[route] || `${importedManifesto.title} · Opificio Vocale`;
   const activeRoute = route.startsWith("manifesto-") ? "manifesti" : route;
   navButtons.forEach(button => {
     const active = button.dataset.route === activeRoute;
     button.classList.toggle("active", active);
     if (button.closest(".bottom-nav")) button.setAttribute("aria-current", active ? "page" : "false");
   });
+  if (activeRoute === "manifesti") markLatestManifestoSeen();
+  const navBadge = document.querySelector("[data-manifesti-badge]");
+  if (navBadge) navBadge.hidden = !hasUnseenManifesto();
   window.scrollTo({ top: 0, behavior: "instant" });
   if (focus) app.focus({ preventScroll: true });
 }
@@ -494,10 +696,36 @@ document.addEventListener("click", event => {
     return;
   }
 
+  const exportButton = event.target.closest("[data-diary-export]");
+  if (exportButton) {
+    exportVoiceDiary();
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-diary-delete]");
+  if (deleteButton) {
+    document.querySelector("#deleteDiaryDialog")?.showModal();
+    return;
+  }
+
+  const confirmDelete = event.target.closest("[data-confirm-diary-delete]");
+  if (confirmDelete) {
+    localStorage.removeItem(VOICE_DIARY_KEY);
+    document.querySelector("#deleteDiaryDialog")?.close();
+    render({ focus: true });
+    return;
+  }
+
+  const shareButton = event.target.closest("[data-share-manifesto]");
+  if (shareButton) {
+    shareManifesto(shareButton);
+    return;
+  }
+
   const routeButton = event.target.closest("[data-route]");
   if (!routeButton) return;
   const route = routeButton.dataset.route;
-  if (!pages[route]) return;
+  if (!pages[route] && !manifestoForRoute(route)) return;
   event.preventDefault();
   if (currentRoute() === route) render({ focus: true });
   else location.hash = route;
@@ -536,9 +764,19 @@ document.addEventListener("submit", event => {
 
 window.addEventListener("hashchange", () => render({ focus: true }));
 render();
+loadManifestiArchive();
 
 let installPrompt;
 const installButton = document.querySelector("#installButton");
+const installDialog = document.querySelector("#installDialog");
+const isIOSDevice = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+
+if (isIOSDevice && !isStandalone) {
+  installButton.textContent = "Aggiungi";
+  installButton.hidden = false;
+}
 
 window.addEventListener("beforeinstallprompt", event => {
   event.preventDefault();
@@ -547,11 +785,14 @@ window.addEventListener("beforeinstallprompt", event => {
 });
 
 installButton.addEventListener("click", async () => {
-  if (!installPrompt) return;
-  installPrompt.prompt();
-  await installPrompt.userChoice;
-  installPrompt = null;
-  installButton.hidden = true;
+  if (installPrompt) {
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    installButton.hidden = true;
+    return;
+  }
+  if (isIOSDevice) installDialog?.showModal();
 });
 
 window.addEventListener("appinstalled", () => { installButton.hidden = true; });

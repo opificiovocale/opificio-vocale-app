@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#173f3b">
   <meta name="description" content="Opificio Vocale: ascolto, pratiche, manifesti e percorsi per una voce libera di scegliere.">
   <title>Opificio Vocale</title>
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icon.svg">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="manifest" href="./manifest.webmanifest?v=4">
+  <link rel="icon" href="./icon.svg?v=4" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png?v=4">
+  <link rel="stylesheet" href="./styles.css?v=4">
 </head>
 <body>
   <div class="app-shell">
@@ -27,7 +27,7 @@
         <span class="nav-icon" aria-hidden="true">⌂</span><span>Home</span>
       </button>
       <button type="button" data-route="manifesti" aria-label="Manifesti">
-        <span class="nav-icon" aria-hidden="true">◎</span><span>Manifesti</span>
+        <span class="nav-icon" aria-hidden="true">◎</span><span>Manifesti</span><span class="nav-new-badge" data-manifesti-badge hidden>Nuovo</span>
       </button>
       <button type="button" data-route="audioteca" aria-label="Audioteca">
         <span class="nav-icon" aria-hidden="true">◌</span><span>Audioteca</span>
@@ -38,7 +38,32 @@
     </nav>
   </div>
 
+  <dialog class="app-dialog" id="installDialog" aria-labelledby="installDialogTitle">
+    <form method="dialog">
+      <p class="eyebrow">Portala con te</p>
+      <h2 id="installDialogTitle">Aggiungi Opificio<br>al tuo iPhone.</h2>
+      <ol class="install-steps">
+        <li><strong>1</strong><span>Tocca il pulsante <b>Condividi</b> di Safari.</span></li>
+        <li><strong>2</strong><span>Scorri e scegli <b>Aggiungi alla schermata Home</b>.</span></li>
+        <li><strong>3</strong><span>Conferma con <b>Aggiungi</b>.</span></li>
+      </ol>
+      <button class="primary-button" value="close">Ho capito</button>
+    </form>
+  </dialog>
+
+  <dialog class="app-dialog" id="deleteDiaryDialog" aria-labelledby="deleteDiaryTitle">
+    <form method="dialog">
+      <p class="eyebrow">Il tuo diario</p>
+      <h2 id="deleteDiaryTitle">Cancellare<br>tutte le tracce?</h2>
+      <p>Questa azione elimina definitivamente il diario conservato su questo dispositivo.</p>
+      <div class="dialog-actions">
+        <button class="primary-button secondary" value="cancel">Annulla</button>
+        <button class="primary-button danger" type="button" data-confirm-diary-delete>Cancella</button>
+      </div>
+    </form>
+  </dialog>
+
   <noscript>Per usare l’app di Opificio Vocale è necessario attivare JavaScript.</noscript>
-  <script src="./app.js" defer></script>
+  <script src="./app.js?v=4" defer></script>
 </body>
 </html>

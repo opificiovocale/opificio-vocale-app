@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "updatedAt": "2026-09-02T00:00:00.000Z",
+  "items": [
+    {
+      "id": "01",
+      "route": "manifesto-1",
+      "campaignId": null,
+      "number": "01",
+      "title": "La voce che hai imparato.",
+      "date": "2026-08-25",
+      "month": "Agosto 2026",
+      "deck": "Una riflessione sulle abitudini vocali, il corpo e la possibilità di scegliere.",
+      "excerpt": "La voce che usi più spesso non è necessariamente quella che ti appartiene di più. È quella che hai allenato di più.",
+      "bodySource": "builtin",
+      "bodyText": null,
+      "previewUrl": null
+    }
+  ]
+}

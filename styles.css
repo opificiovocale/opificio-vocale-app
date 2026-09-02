@@ -414,6 +414,33 @@ summary:focus-visible {
   text-transform: uppercase;
 }
 
+.diary-actions {
+  display: flex;
+  padding: 12px 0 17px;
+  gap: 9px;
+  border-top: 1px solid rgba(32, 35, 31, .18);
+}
+
+.diary-actions button {
+  display: flex;
+  min-height: 40px;
+  padding: 8px 12px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--ink);
+  border-radius: 99px;
+  background: transparent;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.diary-actions button:first-child { flex: 1; }
+.diary-actions button:last-child { border-color: var(--terracotta); color: #8d3f2c; }
+
 .home-sections {
   padding: 46px 22px 51px;
   background: var(--paper);
@@ -438,6 +465,23 @@ summary:focus-visible {
 }
 
 .home-section-card > span:last-child { font-size: 23px; }
+.section-card-end { display: flex; align-items: center; gap: 8px; }
+.new-content-badge,
+.inline-new-badge {
+  display: inline-flex;
+  padding: 5px 7px;
+  border-radius: 99px;
+  background: var(--mustard);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.inline-new-badge { margin-left: 5px; background: var(--ink); color: var(--paper); vertical-align: 1px; }
 .section-mark { font-family: var(--serif); font-size: 37px; }
 .home-section-card small { display: block; margin-bottom: 4px; font-size: 9px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .home-section-card strong { font-family: var(--serif); font-size: 28px; font-weight: 400; line-height: 1; }
@@ -505,6 +549,9 @@ h1 em { color: var(--teal-soft); font-style: normal; }
   font-weight: 800;
   cursor: pointer;
 }
+
+.primary-button.secondary { border: 1px solid currentColor; background: transparent; color: var(--ink); }
+.primary-button.danger { background: var(--terracotta); }
 
 .brand-strip {
   padding: 15px 28px;
@@ -696,6 +743,37 @@ h1 em { color: var(--teal-soft); font-style: normal; }
   line-height: 1.45;
 }
 
+.manifesto-library {
+  padding: 39px 24px 45px;
+  background: var(--ivory);
+}
+
+.library-heading { padding: 0 4px 20px; }
+.library-heading h2 {
+  margin-bottom: 0;
+  font-size: clamp(38px, 10vw, 51px);
+  line-height: .98;
+}
+
+.manifesto-list { margin: 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
+.manifesto-list li { border-bottom: 1px solid var(--line); }
+.manifesto-list button {
+  display: grid;
+  width: 100%;
+  min-height: 98px;
+  padding: 18px 4px;
+  grid-template-columns: 35px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.archive-number { align-self: start; padding-top: 4px; font-family: var(--serif); font-size: 12px; }
+.archive-copy small { display: block; margin-bottom: 6px; font-size: 8px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+.archive-copy strong { display: block; font-family: var(--serif); font-size: 25px; font-weight: 400; line-height: 1.05; }
+
 .newsletter-strip {
   display: flex;
   padding: 20px 24px;
@@ -836,13 +914,23 @@ h1 em { color: var(--teal-soft); font-style: normal; }
   font-family: var(--sans);
 }
 
+.article-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.article-actions .primary-button { margin-top: 25px; }
+.article-footer .share-status {
+  min-height: 18px;
+  margin: 11px 0 0;
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: .04em;
+}
+
 .audioteca-body {
   min-height: 330px;
   padding: 42px 28px 52px;
   background: var(--paper);
 }
 
-.audioteca-body p {
+.audioteca-body > .audioteca-intro {
   max-width: 390px;
   margin-bottom: 28px;
   font-family: var(--serif);
@@ -850,8 +938,24 @@ h1 em { color: var(--teal-soft); font-style: normal; }
   line-height: 1.35;
 }
 
-.button-row { display: flex; flex-wrap: wrap; gap: 12px; }
-.button-row .primary-button.secondary { border: 1px solid var(--ink); background: transparent; color: var(--ink); }
+.audioteca-portals { display: grid; gap: 10px; }
+.audio-portal {
+  display: grid;
+  min-height: 122px;
+  padding: 17px;
+  grid-template-columns: 43px 1fr auto;
+  align-items: center;
+  gap: 13px;
+  border-radius: 19px;
+  color: inherit;
+  text-decoration: none;
+}
+.free-portal { background: var(--mustard); }
+.full-portal { background: var(--teal-soft); color: var(--paper); }
+.portal-mark { font-family: var(--serif); font-size: 34px; }
+.audio-portal small { display: block; margin-bottom: 5px; font-size: 8px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.audio-portal strong { display: block; font-family: var(--serif); font-size: 25px; font-weight: 400; line-height: 1.03; }
+.audio-portal em { display: block; margin-top: 8px; font-family: var(--serif); font-size: 13px; font-style: normal; line-height: 1.25; }
 
 .routes { background: var(--paper); }
 
@@ -885,6 +989,7 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 }
 
 .bottom-nav button {
+  position: relative;
   display: grid;
   min-width: 0;
   padding: 6px 3px;
@@ -908,6 +1013,42 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 }
 
 .nav-icon { font-size: 19px; line-height: 1; }
+
+.nav-new-badge {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--terracotta);
+  color: transparent;
+  font-size: 0;
+}
+
+.app-dialog {
+  width: min(calc(100% - 34px), 440px);
+  max-height: calc(100dvh - 40px);
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 25px;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 25px 80px rgba(0, 0, 0, .38);
+}
+
+.app-dialog::backdrop { background: rgba(14, 35, 32, .76); backdrop-filter: blur(4px); }
+.app-dialog form { padding: 30px 27px 27px; }
+.app-dialog .eyebrow { margin-bottom: 14px; color: var(--terracotta); }
+.app-dialog h2 { margin-bottom: 22px; font-size: 39px; line-height: .98; }
+.app-dialog form > p:not(.eyebrow) { font-family: var(--serif); font-size: 17px; line-height: 1.45; }
+.install-steps { display: grid; margin: 0 0 26px; padding: 0; gap: 12px; list-style: none; }
+.install-steps li { display: grid; grid-template-columns: 35px 1fr; align-items: center; gap: 12px; font-family: var(--serif); font-size: 16px; line-height: 1.35; }
+.install-steps li > strong { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: var(--mustard); font-family: var(--sans); font-size: 10px; }
+.dialog-actions { display: flex; margin-top: 23px; flex-wrap: wrap; gap: 9px; }
+.dialog-actions .primary-button { flex: 1; }
 
 @media (min-width: 680px) {
   body { padding: 22px 0; }
