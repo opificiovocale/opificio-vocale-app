@@ -18,15 +18,200 @@ const external = (href, label, subtitle, mark = "↗") => `
     <span class="arrow" aria-hidden="true">${mark}</span>
   </a>`;
 
+const VOICE_WORDS = [
+  "stanca", "tesa", "fragile", "trattenuta", "libera",
+  "viva", "curiosa", "presente", "potente", "non lo so"
+];
+
+const VOICE_DIARY_KEY = "opificio-voice-diary-v1";
+
+const REFLECTIONS = {
+  gentle: {
+    title: "Può stare così.",
+    copy: "Non c’è nulla da correggere adesso. Possiamo semplicemente darle un po’ di spazio.",
+    practice: "Lascia uscire un respiro senza guidarlo. Poi lascia comparire un piccolo «mmm»: non deve essere bello, pieno o lungo. Nota soltanto dove lo senti."
+  },
+  open: {
+    title: "C’è qualcosa da esplorare.",
+    copy: "C’è qualcosa da esplorare, senza doverlo trattenere o rendere migliore.",
+    practice: "Scegli una frase che dirai oggi. Dilla tre volte: una più lenta, una più ritmica, una lasciandola cambiare da sola. Nota quale possibilità ti incuriosisce."
+  },
+  unknown: {
+    title: "Anche questo è ascolto.",
+    copy: "Anche non saperlo è una risposta. Possiamo ascoltarla senza definirla.",
+    practice: "Rimani qualche secondo senza produrre suono e nota il corpo. Poi lascia comparire una vocale breve, senza prepararla e senza darle un nome."
+  },
+  mixed: {
+    title: "Può contenere più cose.",
+    copy: "La voce non deve avere un solo stato. Possiamo accorgerci di ciò che c’è, senza scegliere una definizione definitiva.",
+    practice: "Pronuncia una frase come viene. Poi cambia un solo parametro — ritmo, altezza o volume — e ripetila. Non cercare una versione migliore: nota cosa diventa possibile."
+  }
+};
+
+const escapeHTML = value => String(value).replace(/[&<>'"]/g, character => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  "'": "&#39;",
+  "\"": "&quot;"
+}[character]));
+
+function localDayKey(date = new Date()) {
+  const pad = value => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function loadVoiceDiary() {
+  try {
+    const diary = JSON.parse(localStorage.getItem(VOICE_DIARY_KEY) || "[]");
+    return Array.isArray(diary) ? diary.filter(entry => entry && entry.date) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveVoiceEntry(entry) {
+  try {
+    const diary = loadVoiceDiary();
+    const updated = [entry, ...diary.filter(item => item.date !== entry.date)].slice(0, 90);
+    localStorage.setItem(VOICE_DIARY_KEY, JSON.stringify(updated));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function reflectionType(entry) {
+  if (entry.words.includes("non lo so")) return "unknown";
+  const gentleWords = ["stanca", "tesa", "fragile", "trattenuta"];
+  const openWords = ["libera", "viva", "curiosa", "presente", "potente"];
+  const hasGentle = entry.words.some(word => gentleWords.includes(word));
+  const hasOpen = entry.words.some(word => openWords.includes(word));
+  if (hasGentle && !hasOpen) return "gentle";
+  if (hasOpen && !hasGentle) return "open";
+  return "mixed";
+}
+
+function voiceReflectionMarkup(entry) {
+  const type = reflectionType(entry);
+  const reflection = REFLECTIONS[type];
+  const words = entry.words.length
+    ? `<p class="chosen-words">${entry.words.map(escapeHTML).join(" · ")}</p>`
+    : "";
+  const ownWords = entry.note
+    ? `<p class="own-words">“${escapeHTML(entry.note)}”</p>`
+    : "";
+
+  return `
+    <section class="voice-reflection ${type}" aria-labelledby="reflection-title">
+      <p class="content-kicker"><span>Il tuo specchio</span> · Oggi</p>
+      <h3 id="reflection-title">${reflection.title}</h3>
+      ${words}${ownWords}
+      <p class="reflection-copy">${reflection.copy}</p>
+      <button class="outline-button" type="button" data-practice-toggle aria-expanded="false">
+        Un minuto per ascoltarla <span aria-hidden="true">＋</span>
+      </button>
+      <div class="micro-practice" hidden>
+        <p>${reflection.practice}</p>
+        <button class="minute-button" type="button" data-minute-start>
+          Avvia il minuto <span data-minute-label>1:00</span>
+        </button>
+        <p class="minute-status" data-minute-status aria-live="polite"></p>
+      </div>
+    </section>`;
+}
+
+function formatDiaryDate(day) {
+  const date = new Date(`${day}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return day;
+  return new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" }).format(date);
+}
+
+function voiceDiaryMarkup() {
+  const diary = loadVoiceDiary();
+  if (!diary.length) return "";
+  return `
+    <details class="voice-diary">
+      <summary><span>Il mio diario della voce</span><strong>${diary.length}</strong></summary>
+      <p class="diary-intro">Niente voti e niente serie da mantenere. Solo tracce dei giorni in cui hai scelto di ascoltarti.</p>
+      <ol>
+        ${diary.slice(0, 7).map(entry => `
+          <li>
+            <time datetime="${escapeHTML(entry.date)}">${formatDiaryDate(entry.date)}</time>
+            <span>${entry.words.length ? entry.words.map(escapeHTML).join(" · ") : escapeHTML(entry.note)}</span>
+          </li>`).join("")}
+      </ol>
+    </details>`;
+}
+
+function voiceCheckInMarkup() {
+  const today = loadVoiceDiary().find(entry => entry.date === localDayKey());
+  const selected = new Set(today?.words || []);
+  return `
+    <section class="voice-check-section" id="voice-check" aria-labelledby="voice-check-title">
+      <div class="check-intro">
+        <p class="eyebrow">Un minuto di ascolto</p>
+        <h2 id="voice-check-title">Dalle una parola.</h2>
+        <p>Scegli fino a tre parole oppure scrivila come viene. Non c’è una risposta giusta.</p>
+      </div>
+      <form class="voice-check-card" id="voiceCheckIn" novalidate>
+        <fieldset>
+          <legend>Come la senti?</legend>
+          <div class="voice-words">
+            ${VOICE_WORDS.map(word => `
+              <button class="voice-word" type="button" data-voice-word="${word}" aria-pressed="${selected.has(word)}">
+                ${word}
+              </button>`).join("")}
+          </div>
+        </fieldset>
+        <label class="own-words-label" for="voiceOwnWords">Oppure usa parole tue</label>
+        <textarea id="voiceOwnWords" name="voiceOwnWords" maxlength="140" rows="3" placeholder="Per esempio: impastata, lontana, pronta a uscire…">${escapeHTML(today?.note || "")}</textarea>
+        <p class="selection-status" data-selection-status aria-live="polite">${selected.size ? `${selected.size} ${selected.size === 1 ? "parola scelta" : "parole scelte"}` : "Puoi scegliere fino a 3 parole."}</p>
+        <button class="primary-button check-submit" type="submit">
+          ${today ? "Aggiorna il mio ascolto" : "Restituiscimi uno specchio"} <span aria-hidden="true">→</span>
+        </button>
+        <p class="privacy-note"><span aria-hidden="true">○</span> Resta soltanto su questo dispositivo.</p>
+      </form>
+      <div id="voiceReflection" aria-live="polite">${today ? voiceReflectionMarkup(today) : ""}</div>
+      <div id="voiceDiary">${voiceDiaryMarkup()}</div>
+    </section>`;
+}
+
 const pages = {
   home: () => `
-    <section class="page" aria-labelledby="home-title">
-      <div class="hero">
-        <p class="eyebrow">Uno spazio per voci libere</p>
-        <h1 id="home-title">La tecnica<br>al servizio<br><em>dell’espressione.</em></h1>
-        <p class="lead">Ascolta, sperimenta, cambia.<br>La tua voce non deve diventare giusta: deve poter scegliere.</p>
-        <button class="primary-button" type="button" data-route="audioteca">Entra nell’audioteca <span aria-hidden="true">↘</span></button>
-      </div>
+    <section class="page home-page" aria-labelledby="home-title">
+      <section class="voice-hero">
+        <img src="./riccardo-home.webp" alt="Riccardo Primitivo Fiorucci, vocal trainer di Opificio Vocale">
+        <div class="voice-hero-shade" aria-hidden="true"></div>
+        <div class="voice-hero-copy">
+          <p class="eyebrow">Il check-in di oggi</p>
+          <h1 id="home-title">Oggi la tua voce<br><em>come sta?</em></h1>
+          <p>Non come dovrebbe stare.<br>Come sta davvero.</p>
+          <button class="primary-button light" type="button" data-check-start>Ascoltiamola <span aria-hidden="true">↓</span></button>
+        </div>
+      </section>
+      ${voiceCheckInMarkup()}
+      <section class="home-sections" aria-labelledby="home-sections-title">
+        <p class="eyebrow">Dentro Opificio</p>
+        <h2 id="home-sections-title">Tutto, da qui.</h2>
+        <div class="home-section-grid">
+          <button class="home-section-card teal-card" type="button" data-route="manifesti">
+            <span class="section-mark" aria-hidden="true">◎</span>
+            <span><small>Podcast e testi</small><strong>Manifesti</strong></span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <button class="home-section-card terracotta-card" type="button" data-route="audioteca">
+            <span class="section-mark" aria-hidden="true">◌</span>
+            <span><small>Esperienze audio</small><strong>Audioteca</strong></span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <button class="home-section-card mustard-card" type="button" data-route="percorsi">
+            <span class="section-mark" aria-hidden="true">✦</span>
+            <span><small>Voce parlata e cantata</small><strong>Percorsi</strong></span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </div>
+      </section>
       <div class="brand-strip">Voce cantata · Voce parlata · Identità · Espressione</div>
     </section>`,
 
@@ -46,7 +231,7 @@ const pages = {
           title="Podcast Manifesti delle voci libere su Spotify"
           src="${LINKS.spotifyEmbed}"
           width="100%"
-          height="352"
+          height="326"
           loading="lazy"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         ></iframe>
@@ -219,7 +404,10 @@ function currentRoute() {
   return pages[route] ? route : "home";
 }
 
+let minuteInterval;
+
 function render({ focus = false } = {}) {
+  window.clearInterval(minuteInterval);
   const route = currentRoute();
   app.innerHTML = pages[route]();
   const titles = {
@@ -241,6 +429,71 @@ function render({ focus = false } = {}) {
 }
 
 document.addEventListener("click", event => {
+  const checkStart = event.target.closest("[data-check-start]");
+  if (checkStart) {
+    document.querySelector("#voice-check")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+
+  const wordButton = event.target.closest("[data-voice-word]");
+  if (wordButton) {
+    const form = wordButton.closest("form");
+    const buttons = [...form.querySelectorAll("[data-voice-word]")];
+    const status = form.querySelector("[data-selection-status]");
+    const isPressed = wordButton.getAttribute("aria-pressed") === "true";
+
+    if (wordButton.dataset.voiceWord === "non lo so" && !isPressed) {
+      buttons.forEach(button => button.setAttribute("aria-pressed", "false"));
+      wordButton.setAttribute("aria-pressed", "true");
+    } else {
+      const unknownButton = buttons.find(button => button.dataset.voiceWord === "non lo so");
+      if (!isPressed && buttons.filter(button => button.getAttribute("aria-pressed") === "true").length >= 3) {
+        status.textContent = "Hai già scelto tre parole. Toccane una per cambiarla.";
+        return;
+      }
+      if (wordButton.dataset.voiceWord !== "non lo so") unknownButton?.setAttribute("aria-pressed", "false");
+      wordButton.setAttribute("aria-pressed", String(!isPressed));
+    }
+
+    const count = buttons.filter(button => button.getAttribute("aria-pressed") === "true").length;
+    status.textContent = count
+      ? `${count} ${count === 1 ? "parola scelta" : "parole scelte"}`
+      : "Puoi scegliere fino a 3 parole.";
+    return;
+  }
+
+  const practiceToggle = event.target.closest("[data-practice-toggle]");
+  if (practiceToggle) {
+    const practice = practiceToggle.nextElementSibling;
+    const willOpen = practice.hidden;
+    practice.hidden = !willOpen;
+    practiceToggle.setAttribute("aria-expanded", String(willOpen));
+    practiceToggle.querySelector("span").textContent = willOpen ? "−" : "＋";
+    return;
+  }
+
+  const minuteButton = event.target.closest("[data-minute-start]");
+  if (minuteButton) {
+    window.clearInterval(minuteInterval);
+    let seconds = 60;
+    const label = minuteButton.querySelector("[data-minute-label]");
+    const status = minuteButton.parentElement.querySelector("[data-minute-status]");
+    minuteButton.disabled = true;
+    status.textContent = "Non devi riuscire. Resta soltanto in ascolto.";
+    label.textContent = "1:00";
+    minuteInterval = window.setInterval(() => {
+      seconds -= 1;
+      label.textContent = `0:${String(seconds).padStart(2, "0")}`;
+      if (seconds <= 0) {
+        window.clearInterval(minuteInterval);
+        minuteButton.disabled = false;
+        label.textContent = "↻";
+        status.textContent = "Il minuto è finito. Nota soltanto se qualcosa è cambiato.";
+      }
+    }, 1000);
+    return;
+  }
+
   const routeButton = event.target.closest("[data-route]");
   if (!routeButton) return;
   const route = routeButton.dataset.route;
@@ -248,6 +501,37 @@ document.addEventListener("click", event => {
   event.preventDefault();
   if (currentRoute() === route) render({ focus: true });
   else location.hash = route;
+});
+
+document.addEventListener("submit", event => {
+  if (event.target.id !== "voiceCheckIn") return;
+  event.preventDefault();
+  const form = event.target;
+  const words = [...form.querySelectorAll("[data-voice-word][aria-pressed='true']")]
+    .map(button => button.dataset.voiceWord);
+  const note = form.elements.voiceOwnWords.value.trim();
+  const status = form.querySelector("[data-selection-status]");
+
+  if (!words.length && !note) {
+    status.textContent = "Scegli almeno una parola oppure scrivi come la senti.";
+    form.elements.voiceOwnWords.focus();
+    return;
+  }
+
+  const entry = {
+    date: localDayKey(),
+    words,
+    note,
+    updatedAt: new Date().toISOString()
+  };
+  const saved = saveVoiceEntry(entry);
+  document.querySelector("#voiceReflection").innerHTML = voiceReflectionMarkup(entry);
+  document.querySelector("#voiceDiary").innerHTML = voiceDiaryMarkup();
+  form.querySelector(".check-submit").innerHTML = "Aggiorna il mio ascolto <span aria-hidden=\"true\">→</span>";
+  status.textContent = saved
+    ? "Il tuo ascolto di oggi è nel diario."
+    : "Lo specchio è pronto, ma il diario non può essere conservato in questo browser.";
+  document.querySelector("#voiceReflection").scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
 window.addEventListener("hashchange", () => render({ focus: true }));

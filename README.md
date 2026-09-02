@@ -1,15 +1,15 @@
 # Opificio Vocale — app
 
-Prima versione pubblica della web app di Opificio Vocale.
+Web app pubblica di Opificio Vocale.
 
 ## Contenuti
 
-- Home
+- Home con check-in quotidiano “Oggi la tua voce come sta?”, micro-pratica e diario privato sul dispositivo
 - Manifesti: player Spotify integrato e ultimo Manifesto leggibile nell’app
 - Audioteca: accesso generale e alle esperienze gratuite
 - Percorsi: Check Vocale, Reset Vocale, Vocal Boom e Vocal Hit
 
-L’app è una PWA statica, mobile-first e installabile. Non richiede login, database o costi di hosting.
+L’app è una PWA statica, mobile-first e installabile. Non richiede login, database o costi di hosting. Il diario della voce usa esclusivamente lo spazio locale del dispositivo.
 
 ## Pubblicazione con GitHub Pages
 
