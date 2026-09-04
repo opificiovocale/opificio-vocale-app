@@ -5,8 +5,7 @@ const token = process.env.MAILERLITE_API_TOKEN?.trim();
 const dataPath = process.env.MANIFESTI_DATA_PATH || fileURLToPath(new URL("../manifesti.json", import.meta.url));
 
 if (!token) {
-  console.log("MAILERLITE_API_TOKEN non configurato: sincronizzazione saltata.");
-  process.exit(0);
+  throw new Error("Sincronizzazione non attiva: configura MAILERLITE_API_TOKEN nei repository secrets di GitHub.");
 }
 
 const response = await fetch(
@@ -20,7 +19,7 @@ const response = await fetch(
 );
 
 if (!response.ok) {
-  throw new Error(`MailerLite ha risposto ${response.status}: ${await response.text()}`);
+  throw new Error(`MailerLite ha risposto ${response.status}. Verifica il collegamento e riprova.`);
 }
 
 const payload = await response.json();

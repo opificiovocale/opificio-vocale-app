@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 concurrency:
   group: sync-manifesti
@@ -30,6 +31,7 @@ jobs:
         run: node scripts/sync-mailerlite.mjs
 
       - name: Pubblica il nuovo archivio
+        id: archive
         run: |
           if git diff --quiet -- manifesti.json; then
             echo "Nessun cambiamento da pubblicare."
@@ -40,3 +42,11 @@ jobs:
           git add manifesti.json
           git commit -m "Aggiorna archivio Manifesti"
           git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Aggiorna il sito pubblicato
+        if: steps.archive.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_REPOSITORY: ${{ github.repository }}
+        run: gh api --method POST "repos/$APP_REPOSITORY/pages/builds" --silent

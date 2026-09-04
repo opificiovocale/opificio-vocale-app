@@ -15,6 +15,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 html { background: var(--teal); }
 
@@ -393,6 +394,12 @@ summary:focus-visible {
 }
 
 .voice-diary ol { margin: 0; padding: 0 0 9px; list-style: none; }
+.diary-entry { display: grid; gap: 5px; overflow-wrap: anywhere; }
+.diary-note { font-style: italic; }
+.diary-more { margin: 0 0 18px; padding: 12px 0; border: 0; background: transparent; font-size: 13px; text-decoration: underline; cursor: pointer; }
+.archive-message { padding: 45px 27px; }
+.archive-message h1 { font-size: 42px; }
+.archive-message > p:not(.eyebrow) { font-family: var(--serif); font-size: 18px; line-height: 1.5; }
 
 .voice-diary li {
   display: grid;
@@ -442,7 +449,7 @@ summary:focus-visible {
 .diary-actions button:last-child { border-color: var(--terracotta); color: #8d3f2c; }
 
 .home-sections {
-  padding: 46px 22px 51px;
+  padding: 32px 22px 34px;
   background: var(--paper);
 }
 

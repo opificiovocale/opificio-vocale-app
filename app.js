@@ -72,6 +72,11 @@ const FALLBACK_MANIFESTI = [{
 
 const LAST_SEEN_MANIFESTO_KEY = "opificio-last-seen-manifesto-v1";
 let manifestiArchive = [...FALLBACK_MANIFESTI];
+let archiveLoading = true;
+
+function requestedRoute() {
+  return location.hash.slice(1);
+}
 
 function latestManifesto() {
   return manifestiArchive[0] || FALLBACK_MANIFESTI[0];
@@ -122,6 +127,7 @@ function newManifestoBadgeMarkup() {
 function manifestoArchiveMarkup() {
   const latest = latestManifesto();
   return `
+    <div data-manifesto-archive>
     <section class="latest-manifesto" aria-labelledby="latest-manifesto-title">
       <p class="content-kicker"><span>Leggi</span> · Ultimo Manifesto ${isRecentManifesto(latest) ? '<b class="inline-new-badge">Nuovo</b>' : ""}</p>
       <p class="manifesto-number">${escapeHTML(latest.number)}</p>
@@ -147,7 +153,7 @@ function manifestoArchiveMarkup() {
             </button>
           </li>`).join("")}
       </ol>
-    </section>`;
+    </section></div>`;
 }
 
 function bodyTextMarkup(value) {
@@ -178,7 +184,7 @@ function importedManifestoMarkup(item) {
         ${body}
         <footer class="article-footer">
           <p>Riccardo Primitivo Fiorucci</p>
-          <small>gender affirming vocal trainer · vocal coach · insegnante di canto</small>
+          <small>gender affirming vocal trainer - insegnante di canto - vocal trainer</small>
           <div class="article-actions">
             <button class="primary-button" type="button" data-share-manifesto data-share-title="${escapeHTML(item.title)}">Condividi <span aria-hidden="true">↗</span></button>
             <a class="primary-button secondary" href="${LINKS.manifesti}" target="_blank" rel="noopener noreferrer">Ricevi i prossimi <span aria-hidden="true">↗</span></a>
@@ -191,15 +197,23 @@ function importedManifestoMarkup(item) {
 
 async function loadManifestiArchive() {
   try {
-    const response = await fetch("./manifesti.json", { cache: "no-store" });
+    const response = await fetch("./manifesti.json", { cache: "no-store", signal: AbortSignal.timeout(10000) });
     if (!response.ok) throw new Error(`Archivio non disponibile (${response.status})`);
     const data = await response.json();
     if (!Array.isArray(data.items) || !data.items.length) throw new Error("Archivio vuoto");
-    manifestiArchive = data.items;
-    const route = currentRoute();
-    if (route === "home" || route === "manifesti" || route.startsWith("manifesto-")) render();
+    const items = data.items.filter(item => item && typeof item.id === "string" &&
+      typeof item.title === "string" && typeof item.date === "string" && item.date <= localDayKey());
+    if (!items.length) throw new Error("Nessun Manifesto pubblicato");
+    manifestiArchive = items.sort((a, b) => b.date.localeCompare(a.date));
   } catch (error) {
     console.warn("Uso l'archivio Manifesti incluso nell'app.", error);
+  } finally {
+    archiveLoading = false;
+    // Aggiorna solo l'archivio: lascia intatti ascolti, form e posizione di lettura.
+    const archive = document.querySelector("[data-manifesto-archive]");
+    if (archive) archive.outerHTML = manifestoArchiveMarkup();
+    if (requestedRoute().startsWith("manifesto-") && document.querySelector("[data-archive-pending]")) render();
+    updateManifestoBadges();
   }
 }
 
@@ -211,7 +225,15 @@ function localDayKey(date = new Date()) {
 function loadVoiceDiary() {
   try {
     const diary = JSON.parse(localStorage.getItem(VOICE_DIARY_KEY) || "[]");
-    return Array.isArray(diary) ? diary.filter(entry => entry && entry.date) : [];
+    if (!Array.isArray(diary)) return [];
+    return diary.filter(entry => entry && /^\d{4}-\d{2}-\d{2}$/.test(entry.date))
+      .map(entry => ({
+        ...entry,
+        words: Array.isArray(entry.words) ? [...new Set(entry.words.filter(word => VOICE_WORDS.includes(word)))].slice(0, 3) : [],
+        note: typeof entry.note === "string" ? entry.note.slice(0, 140) : ""
+      }))
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 90);
   } catch {
     return [];
   }
@@ -282,12 +304,13 @@ function voiceDiaryMarkup() {
       <summary><span>Il mio diario della voce</span><strong>${diary.length}</strong></summary>
       <p class="diary-intro">Niente voti e niente serie da mantenere. Solo tracce dei giorni in cui hai scelto di ascoltarti.</p>
       <ol>
-        ${diary.slice(0, 7).map(entry => `
-          <li>
+        ${diary.map((entry, index) => `
+          <li ${index >= 7 ? 'data-diary-older hidden' : ''}>
             <time datetime="${escapeHTML(entry.date)}">${formatDiaryDate(entry.date)}</time>
-            <span>${entry.words.length ? entry.words.map(escapeHTML).join(" · ") : escapeHTML(entry.note)}</span>
+            <span class="diary-entry">${entry.words.length ? `<span>${entry.words.map(escapeHTML).join(" · ")}</span>` : ""}${entry.note ? `<span class="diary-note">${escapeHTML(entry.note)}</span>` : ""}</span>
           </li>`).join("")}
       </ol>
+      ${diary.length > 7 ? '<button class="diary-more" type="button" data-diary-more aria-expanded="false">Mostra i giorni precedenti</button>' : ''}
       <div class="diary-actions">
         <button type="button" data-diary-export>Esporta il diario <span aria-hidden="true">↓</span></button>
         <button type="button" data-diary-delete>Cancella <span aria-hidden="true">×</span></button>
@@ -341,7 +364,6 @@ const pages = {
           <button class="primary-button light" type="button" data-check-start>Ascoltiamola <span aria-hidden="true">↓</span></button>
         </div>
       </section>
-      ${voiceCheckInMarkup()}
       <section class="home-sections" aria-labelledby="home-sections-title">
         <p class="eyebrow">Dentro Opificio</p>
         <h2 id="home-sections-title">Tutto, da qui.</h2>
@@ -363,6 +385,7 @@ const pages = {
           </button>
         </div>
       </section>
+      ${voiceCheckInMarkup()}
       <div class="brand-strip">Voce cantata · Voce parlata · Identità · Espressione</div>
     </section>`,
 
@@ -498,7 +521,7 @@ const pages = {
 
         <footer class="article-footer">
           <p>Riccardo Primitivo Fiorucci</p>
-          <small>gender affirming vocal trainer · vocal coach · insegnante di canto</small>
+          <small>gender affirming vocal trainer - insegnante di canto - vocal trainer</small>
           <div class="article-actions">
             <button class="primary-button" type="button" data-share-manifesto data-share-title="La voce che hai imparato.">Condividi <span aria-hidden="true">↗</span></button>
             <a class="primary-button secondary" href="${LINKS.manifesti}" target="_blank" rel="noopener noreferrer">Ricevi i prossimi <span aria-hidden="true">↗</span></a>
@@ -557,8 +580,8 @@ const pages = {
 };
 
 function currentRoute() {
-  const route = location.hash.replace("#", "");
-  return pages[route] || manifestoForRoute(route) ? route : "home";
+  const route = requestedRoute();
+  return Object.hasOwn(pages, route) || manifestoForRoute(route) || route.startsWith("manifesto-") ? route : "home";
 }
 
 let minuteInterval;
@@ -604,11 +627,26 @@ async function shareManifesto(button) {
   }
 }
 
+function updateManifestoBadges() {
+  const unseen = hasUnseenManifesto();
+  const navBadge = document.querySelector("[data-manifesti-badge]");
+  if (navBadge) navBadge.hidden = !unseen;
+  const homeBadge = document.querySelector(".home-section-card .new-content-badge");
+  if (homeBadge) homeBadge.hidden = !unseen;
+  else if (unseen) document.querySelector(".section-card-end")?.insertAdjacentHTML("afterbegin", newManifestoBadgeMarkup());
+}
+
 function render({ focus = false } = {}) {
   window.clearInterval(minuteInterval);
   const route = currentRoute();
   const importedManifesto = manifestoForRoute(route);
-  app.innerHTML = pages[route] ? pages[route]() : importedManifestoMarkup(importedManifesto);
+  app.innerHTML = Object.hasOwn(pages, route) ? pages[route]() : importedManifesto ? importedManifestoMarkup(importedManifesto) : `
+    <section class="page archive-message" data-archive-pending>
+      <p class="eyebrow">Manifesti delle voci libere</p>
+      <h1>${archiveLoading ? "Un momento di attesa." : "Questo Manifesto non è disponibile."}</h1>
+      <p>${archiveLoading ? "Sto aprendo il testo che hai scelto." : "Puoi ritrovare i testi pubblicati nell’archivio. Se sei offline, riprova quando torni in rete."}</p>
+      <button class="primary-button" type="button" data-route="manifesti">Vai ai Manifesti <span aria-hidden="true">→</span></button>
+    </section>`;
   const titles = {
     home: "Opificio Vocale",
     manifesti: "Manifesti · Opificio Vocale",
@@ -616,16 +654,15 @@ function render({ focus = false } = {}) {
     audioteca: "Audioteca · Opificio Vocale",
     percorsi: "Percorsi · Opificio Vocale"
   };
-  document.title = titles[route] || `${importedManifesto.title} · Opificio Vocale`;
+  document.title = titles[route] || `${importedManifesto?.title || "Manifesti"} · Opificio Vocale`;
   const activeRoute = route.startsWith("manifesto-") ? "manifesti" : route;
   navButtons.forEach(button => {
     const active = button.dataset.route === activeRoute;
     button.classList.toggle("active", active);
     if (button.closest(".bottom-nav")) button.setAttribute("aria-current", active ? "page" : "false");
   });
-  if (activeRoute === "manifesti") markLatestManifestoSeen();
-  const navBadge = document.querySelector("[data-manifesti-badge]");
-  if (navBadge) navBadge.hidden = !hasUnseenManifesto();
+  if (importedManifesto?.id === latestManifesto().id) markLatestManifestoSeen();
+  updateManifestoBadges();
   window.scrollTo({ top: 0, behavior: "instant" });
   if (focus) app.focus({ preventScroll: true });
 }
@@ -677,15 +714,15 @@ document.addEventListener("click", event => {
   const minuteButton = event.target.closest("[data-minute-start]");
   if (minuteButton) {
     window.clearInterval(minuteInterval);
-    let seconds = 60;
+    const endsAt = Date.now() + 60000;
     const label = minuteButton.querySelector("[data-minute-label]");
     const status = minuteButton.parentElement.querySelector("[data-minute-status]");
     minuteButton.disabled = true;
     status.textContent = "Non devi riuscire. Resta soltanto in ascolto.";
     label.textContent = "1:00";
     minuteInterval = window.setInterval(() => {
-      seconds -= 1;
-      label.textContent = `0:${String(seconds).padStart(2, "0")}`;
+      const seconds = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+      label.textContent = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
       if (seconds <= 0) {
         window.clearInterval(minuteInterval);
         minuteButton.disabled = false;
@@ -702,6 +739,15 @@ document.addEventListener("click", event => {
     return;
   }
 
+  const moreDiary = event.target.closest("[data-diary-more]");
+  if (moreDiary) {
+    const expanded = moreDiary.getAttribute("aria-expanded") !== "true";
+    moreDiary.closest(".voice-diary").querySelectorAll("[data-diary-older]").forEach(row => { row.hidden = !expanded; });
+    moreDiary.setAttribute("aria-expanded", String(expanded));
+    moreDiary.textContent = expanded ? "Mostra solo gli ultimi 7 giorni" : "Mostra i giorni precedenti";
+    return;
+  }
+
   const deleteButton = event.target.closest("[data-diary-delete]");
   if (deleteButton) {
     document.querySelector("#deleteDiaryDialog")?.showModal();
@@ -710,7 +756,12 @@ document.addEventListener("click", event => {
 
   const confirmDelete = event.target.closest("[data-confirm-diary-delete]");
   if (confirmDelete) {
-    localStorage.removeItem(VOICE_DIARY_KEY);
+    try {
+      localStorage.removeItem(VOICE_DIARY_KEY);
+    } catch {
+      document.querySelector("#deleteDiaryStatus").textContent = "Non riesco a cancellare il diario in questo browser. Riprova.";
+      return;
+    }
     document.querySelector("#deleteDiaryDialog")?.close();
     render({ focus: true });
     return;
@@ -725,7 +776,7 @@ document.addEventListener("click", event => {
   const routeButton = event.target.closest("[data-route]");
   if (!routeButton) return;
   const route = routeButton.dataset.route;
-  if (!pages[route] && !manifestoForRoute(route)) return;
+  if (!Object.hasOwn(pages, route) && !manifestoForRoute(route)) return;
   event.preventDefault();
   if (currentRoute() === route) render({ focus: true });
   else location.hash = route;
@@ -753,6 +804,7 @@ document.addEventListener("submit", event => {
     updatedAt: new Date().toISOString()
   };
   const saved = saveVoiceEntry(entry);
+  window.clearInterval(minuteInterval);
   document.querySelector("#voiceReflection").innerHTML = voiceReflectionMarkup(entry);
   document.querySelector("#voiceDiary").innerHTML = voiceDiaryMarkup();
   form.querySelector(".check-submit").innerHTML = "Aggiorna il mio ascolto <span aria-hidden=\"true\">→</span>";
@@ -798,5 +850,5 @@ installButton.addEventListener("click", async () => {
 window.addEventListener("appinstalled", () => { installButton.hidden = true; });
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
 }
