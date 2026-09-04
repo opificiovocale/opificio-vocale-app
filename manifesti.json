@@ -1,25 +1,11 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-04T14:44:46.225Z",
+  "updatedAt": "2026-09-04T14:56:43.842Z",
   "items": [
-    {
-      "id": "ml-196774375374980462",
-      "campaignId": "196774375374980462",
-      "number": "04",
-      "title": "#1 — La voce che hai imparato",
-      "date": "2026-08-25",
-      "month": "Agosto 2026",
-      "deck": "Una nuova riflessione di Manifesti delle voci libere.",
-      "excerpt": "Il software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:",
-      "bodySource": "mailerlite",
-      "bodyText": "Ciao,\n\nIl software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:\n\nNon ti interessa più? Clicca qui per cancellarti:",
-      "previewUrl": "https://preview.mailerlite.io/preview/1014402/emails/196774375385466223",
-      "deliveredAt": "2026-08-25 11:58:46"
-    },
     {
       "id": "01",
       "route": "manifesto-1",
-      "campaignId": null,
+      "campaignId": "196774375374980462",
       "number": "01",
       "title": "La voce che hai imparato.",
       "date": "2026-08-25",
@@ -28,35 +14,22 @@
       "excerpt": "La voce che usi più spesso non è necessariamente quella che ti appartiene di più. È quella che hai allenato di più.",
       "bodySource": "builtin",
       "bodyText": null,
-      "previewUrl": null
+      "previewUrl": "https://preview.mailerlite.io/preview/1014402/emails/196774375385466223",
+      "deliveredAt": "2026-08-25 11:58:46"
     },
     {
       "id": "ml-196322277465261249",
       "campaignId": "196322277465261249",
-      "number": "03",
-      "title": "#0 - La tua voce: prima di cambiarla?",
+      "number": "00",
+      "title": "La tua voce: prima di cambiarla?",
       "date": "2026-08-20",
       "month": "Agosto 2026",
-      "deck": "Una nuova riflessione di Manifesti delle voci libere.",
-      "excerpt": "However, your email software can't display HTML emails. You can view the newsletter by clicking here:",
+      "deck": "Una riflessione di Manifesti delle voci libere.",
+      "excerpt": "E quest’anno, invece di pensare soltanto a cosa avrei voluto ricevere, mi sono fatto un regalo.",
       "bodySource": "mailerlite",
-      "bodyText": "Hello,\n\nHowever, your email software can't display HTML emails. You can view the newsletter by clicking here:\n\nNot interested anymore? Click here to unsubscribe:",
+      "bodyText": "Manifesto #0\n\nManifesti delle voci libere\n\nPrima di cambiare la tua voce, ascoltala\n\nOggi è il mio compleanno.\n\nE quest’anno, invece di pensare soltanto a cosa avrei voluto ricevere, mi sono fatto un regalo.\n\nHo deciso di aprire uno spazio nuovo.\n\nSi chiama Manifesti delle voci libere.\n\nNasce dentro Opificio Vocale, ma vuole permettersi di andare anche un po’ oltre.\n\nQui parleremo di voce, naturalmente.\n\nMa anche di corpo.\nDi identità.\nDi ascolto.\nDi libertà.\n\nDi tutte quelle volte in cui la voce ci rappresenta perfettamente e di quelle in cui, invece, sembra quasi appartenere a qualcun altro.\n\nParleremo delle voci che impariamo a costruire.\n\nDi quelle che usiamo per lavorare.\n\nDi quelle che diventano piccole quando abbiamo paura.\n\nDi quelle che arrivano quando ridiamo senza pensarci.\n\nE forse anche delle voci che ancora non conosciamo.\n\nPassiamo moltissimo tempo a cambiare la voce.\n\nLa vogliamo più forte.\n\nPiù sicura.\n\nPiù grave.\n\nPiù acuta.\n\nPiù femminile.\n\nPiù maschile.\n\nPiù intonata.\n\nPiù autorevole.\n\nPiù bella.\n\nPiù nostra.\n\nÈ comprensibile.\n\nUna parte importante del mio lavoro consiste proprio nell’aiutare le persone a trasformare la propria voce.\n\nEppure, negli ultimi anni, una domanda ha iniziato a tornarmi sempre più spesso:\n\nprima di cambiarla, quanto tempo passiamo davvero ad ascoltarla?\n\nNon ad analizzarla.\n\nNon a giudicarla.\n\nNon a stabilire cosa non funziona.\n\nAd ascoltarla.\n\nE basta.\n\nForse è difficile perché, appena sentiamo la nostra voce, cominciamo immediatamente a correggerla.\n\nQuesta parola è uscita male.\n\nQui sono troppo nasale.\n\nQui sembro insicuro.\n\nQui non mi riconosco.\n\nQui dovrei respirare meglio.\n\nQui dovrei essere diversə.\n\nLa voce diventa molto velocemente un progetto.\n\nQualcosa su cui lavorare.\n\nQualcosa da migliorare.\n\nE qualche volta dimentichiamo che, prima di essere tutto questo, è già qualcosa che sta accadendo nel nostro corpo.\n\nAdesso.\n\nPer questo il primo contenuto di Manifesti delle voci libere non è un tutorial.\n\nNon è un esercizio tecnico.\n\nNon è nemmeno una lezione.\n\nÈ una meditazione guidata.\n\nL’ho chiamata:\n\nLa Soglia\n\nPer qualche minuto ti accompagno in un luogo immaginario in cui la tua voce non deve dimostrare niente.\n\nNon deve essere bella.\n\nNon deve essere forte.\n\nNon deve essere sicura.\n\nNon deve essere corretta.\n\nNon deve nemmeno piacerti.\n\nPuò semplicemente esistere.\n\nE forse, proprio da lì, può cominciare un modo diverso di incontrarla.\n\nPuoi ascoltare gratuitamente La Soglia qui:\n\nhttps://on.soundcloud.com/LyWEvPIHiRqZR8sVBA\n\nTi consiglio di farlo quando puoi concederti qualche minuto senza essere interrottə.\n\nMetti le cuffie, se ne hai voglia.\n\nPoi lascia che succeda quello che succede.\n\nNon c’è niente da fare bene.\n\nQuesto è soltanto il primo passo.\n\nManifesti delle voci libere continuerà anche in forma di podcast.\n\nCi saranno riflessioni brevi, conversazioni, esperienze, pratiche e persone che hanno qualcosa da raccontare sul rapporto con la propria voce.\n\nE questa newsletter sarà il luogo più lento.\n\nQuello delle lettere.\n\nDelle domande che non hanno bisogno di una risposta immediata.\n\nDelle cose che meritano qualche minuto in più.\n\nNon so ancora esattamente dove ci porterà.\n\nE, per una volta, mi piace così.\n\nOggi compio un anno in più.\n\nE il regalo che ho scelto di farmi è questo:\n\naprire una porta.\n\nSe vorrai attraversarla insieme a me, ne sarò felice.\n\nBenvenutə in Manifesti delle voci libere.\n\nRiccardo\nOpificio Vocale\n\nP.S. Se ascolti La Soglia, puoi rispondermi anche soltanto con una parola: quella che descrive come ti sei sentitə alla fine. Mi piacerebbe sapere cosa c’è stato dall’altra parte.\n\nRiccardo Primitivo Fiorucci\n\nOpificio Vocale",
       "previewUrl": "https://preview.mailerlite.io/preview/1014402/emails/196322277484135618",
       "deliveredAt": "2026-08-20 12:21:29"
-    },
-    {
-      "id": "ml-151848785380639751",
-      "campaignId": "151848785380639751",
-      "number": "02",
-      "title": "Ciao {$name}! Vuoi partecipare a Manifesti delle voci libere?",
-      "date": "2025-04-16",
-      "month": "Aprile 2025",
-      "deck": "Una nuova riflessione di Manifesti delle voci libere.",
-      "excerpt": "Il software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:",
-      "bodySource": "mailerlite",
-      "bodyText": "Ciao,\n\nIl software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:\n\nNon ti interessa più? Clicca qui per cancellarti:",
-      "previewUrl": "https://preview.mailerlite.io/preview/1014402/emails/151848785400562699",
-      "deliveredAt": "2025-04-16 21:19:49"
     }
   ]
 }
