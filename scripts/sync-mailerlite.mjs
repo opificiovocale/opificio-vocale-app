@@ -1,153 +1,45 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { readFile, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { manifestoNumber, campaignEmail, readBody, mergeManifesto } from './manifesti-import.mjs';
 
 const token = process.env.MAILERLITE_API_TOKEN?.trim();
-const dataPath = process.env.MANIFESTI_DATA_PATH || fileURLToPath(new URL("../manifesti.json", import.meta.url));
+const dataPath = process.env.MANIFESTI_DATA_PATH || fileURLToPath(new URL('../manifesti.json', import.meta.url));
+if (!token) throw new Error('Sincronizzazione non attiva: configura MAILERLITE_API_TOKEN nei repository secrets di GitHub.');
 
-if (!token) {
-  throw new Error("Sincronizzazione non attiva: configura MAILERLITE_API_TOKEN nei repository secrets di GitHub.");
-}
-
-const response = await fetch(
-  "https://connect.mailerlite.com/api/campaigns?filter%5Bstatus%5D=sent&limit=100",
-  {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`
-    }
-  }
-);
-
-if (!response.ok) {
-  throw new Error(`MailerLite ha risposto ${response.status}. Verifica il collegamento e riprova.`);
-}
-
-const payload = await response.json();
-const stored = JSON.parse(await readFile(dataPath, "utf8"));
-const existingItems = Array.isArray(stored.items) ? stored.items : [];
-
-const normalize = value => String(value || "")
-  .toLocaleLowerCase("it")
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .replace(/[^a-z0-9]+/g, " ")
-  .trim();
-
-const campaignEmail = campaign => {
-  const emails = Array.isArray(campaign.emails) ? campaign.emails : [];
-  return emails.find(email => email.is_winner) || emails[0] || {};
-};
-
-const campaignDate = campaign =>
-  campaign.finished_at || campaign.started_at || campaign.updated_at || campaign.created_at || "";
-
-const cleanTitle = (subject, name) => {
-  const candidate = String(subject || name || "Nuovo Manifesto").trim();
-  const withoutPrefix = candidate
-    .replace(/^\s*manifest[oi](?:\s+delle\s+voci\s+libere)?\s*(?:n[.°º]?\s*)?\d*\s*[-—:|·]*\s*/i, "")
-    .trim();
-  return withoutPrefix || candidate;
-};
-
-const cleanCampaignText = value => {
-  const normalized = String(value || "")
-    .replace(/\r\n?/g, "\n")
-    .replace(/\u00a0/g, " ")
-    .trim();
-  if (!normalized) return "";
-
-  const footer = /\n(?:visualizza|leggi|view).{0,35}(?:browser|online)|\n.{0,30}(?:disiscriv|unsubscribe|annulla l.iscrizione|preferenze email)/i;
-  const footerIndex = normalized.search(footer);
-  const withoutFooter = footerIndex > 240 ? normalized.slice(0, footerIndex) : normalized;
-
-  return withoutFooter
-    .split("\n")
-    .filter(line => !/\{\$[^}]+\}/.test(line))
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-};
-
-const excerptFrom = text => {
-  const paragraph = text.split(/\n\s*\n/).map(part => part.trim()).find(part => part.length > 70) || "";
-  if (paragraph.length <= 220) return paragraph;
-  return `${paragraph.slice(0, 216).trimEnd()}…`;
-};
-
-const manifestCampaigns = (Array.isArray(payload.data) ? payload.data : [])
-  .map(campaign => ({ campaign, email: campaignEmail(campaign) }))
-  .filter(({ campaign, email }) => /manifest[oi]/i.test(`${campaign.name || ""} ${email.subject || ""}`))
-  .sort((left, right) => new Date(campaignDate(left.campaign)) - new Date(campaignDate(right.campaign)));
-
-let nextNumber = existingItems.reduce((highest, item) => {
-  const number = Number.parseInt(item.number, 10);
-  return Number.isFinite(number) ? Math.max(highest, number) : highest;
-}, 0) + 1;
-
-const items = [...existingItems];
-
-for (const { campaign, email } of manifestCampaigns) {
-  const label = `${campaign.name || ""} ${email.subject || ""}`;
-  const parsedNumber = label.match(/manifest[oi](?:\s+delle\s+voci\s+libere)?\s*(?:n[.°º]?\s*)?(\d+)/i)?.[1];
-  const number = parsedNumber
-    ? String(Number.parseInt(parsedNumber, 10)).padStart(2, "0")
-    : String(nextNumber++).padStart(2, "0");
-  const bodyText = cleanCampaignText(email.plain_text);
-  const title = cleanTitle(email.subject, campaign.name);
-  const deliveredAt = campaignDate(campaign);
-  const date = deliveredAt ? deliveredAt.slice(0, 10) : new Date().toISOString().slice(0, 10);
-  const previewUrl = email.preview_url || campaign.preview_url || null;
-  const index = items.findIndex(item =>
-    String(item.campaignId || "") === String(campaign.id) ||
-    item.number === number ||
-    normalize(item.title) === normalize(title)
-  );
-
-  if (index >= 0) {
-    const current = items[index];
-    items[index] = {
-      ...current,
-      campaignId: String(campaign.id),
-      previewUrl: previewUrl || current.previewUrl || null,
-      deliveredAt
-    };
-    continue;
-  }
-
-  const formattedMonth = new Intl.DateTimeFormat("it-IT", { month: "long", year: "numeric" })
-    .format(new Date(`${date}T12:00:00Z`));
-
-  items.push({
-    id: `ml-${campaign.id}`,
-    campaignId: String(campaign.id),
-    number,
-    title,
-    date,
-    month: formattedMonth.charAt(0).toUpperCase() + formattedMonth.slice(1),
-    deck: "Una nuova riflessione di Manifesti delle voci libere.",
-    excerpt: excerptFrom(bodyText) || "Un nuovo Manifesto da leggere e attraversare.",
-    bodySource: "mailerlite",
-    bodyText: bodyText.length >= 120 ? bodyText : null,
-    previewUrl,
-    deliveredAt
+const campaigns = [];
+let page = 1;
+while (true) {
+  const response = await fetch(`https://connect.mailerlite.com/api/campaigns?filter%5Bstatus%5D=sent&limit=100&page=${page}`, {
+    headers:{Accept:'application/json',Authorization:`Bearer ${token}`}, signal:AbortSignal.timeout(30000)
   });
+  if (!response.ok) throw new Error(`MailerLite ha risposto ${response.status}. Verifica il collegamento e riprova.`);
+  const payload = await response.json();
+  if (!Array.isArray(payload.data)) throw new Error('MailerLite non ha restituito un elenco di campagne valido.');
+  campaigns.push(...payload.data);
+  if (!payload.links?.next) break;
+  if (++page > 100) throw new Error('L’archivio richiede una verifica della paginazione.');
 }
 
-items.sort((left, right) => {
-  const byDate = new Date(right.date || 0) - new Date(left.date || 0);
-  return byDate || Number.parseInt(right.number, 10) - Number.parseInt(left.number, 10);
-});
+const stored = JSON.parse(await readFile(dataPath,'utf8'));
+const existingItems = Array.isArray(stored.items) ? stored.items : [];
+// Ricostruisci gli importati dalla fonte: elimina gli inviti non numerati e i vecchi duplicati.
+const items = existingItems.filter(item => item.bodySource !== 'mailerlite');
+const editions = campaigns.filter(campaign => campaign.status === 'sent' && manifestoNumber(campaign,campaignEmail(campaign)) !== null)
+  .sort((a,b) => String(a.finished_at || a.started_at).localeCompare(String(b.finished_at || b.started_at)));
 
+for (const campaign of editions) {
+  const email = campaignEmail(campaign);
+  const number = manifestoNumber(campaign,email);
+  const builtin = items.some(item => item.number === number && item.bodySource === 'builtin');
+  const body = builtin ? null : await readBody(email,email.preview_url || campaign.preview_url);
+  mergeManifesto(items,campaign,email,body);
+  console.log(`Manifesto ${number}: ${builtin ? 'testo editoriale conservato' : `${body.length} caratteri importati`}.`);
+}
+
+items.sort((a,b) => b.date.localeCompare(a.date) || Number(b.number)-Number(a.number));
 if (JSON.stringify(items) === JSON.stringify(existingItems)) {
-  console.log("Nessun nuovo Manifesto da sincronizzare.");
-  process.exit(0);
+  console.log('Nessun nuovo Manifesto da sincronizzare.');
+} else {
+  await writeFile(dataPath,`${JSON.stringify({version:1,updatedAt:new Date().toISOString(),items},null,2)}\n`,'utf8');
+  console.log(`Archivio aggiornato: ${items.length} Manifesti.`);
 }
-
-const nextData = {
-  version: 1,
-  updatedAt: new Date().toISOString(),
-  items
-};
-
-await writeFile(dataPath, `${JSON.stringify(nextData, null, 2)}\n`, "utf8");
-console.log(`Archivio aggiornato: ${items.length} Manifesti.`);

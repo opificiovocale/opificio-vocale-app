@@ -13,7 +13,7 @@ L’app è una PWA statica, mobile-first e installabile anche su iPhone. Non ric
 
 ## Sincronizzazione automatica dei Manifesti
 
-I contenuti sono indicizzati in `manifesti.json`. Dopo il collegamento a MailerLite, il workflow `Sincronizza Manifesti da MailerLite` controlla ogni ora le campagne inviate il cui nome o oggetto contiene “Manifesto”, importa le nuove uscite e richiede una nuova pubblicazione del sito. La cadenza di GitHub può subire ritardi.
+I contenuti sono indicizzati in `manifesti.json`. Il workflow `Sincronizza Manifesti da MailerLite` controlla ogni ora le campagne inviate che indicano un numero di Manifesto nel nome o nell’oggetto, importa le nuove uscite e richiede una nuova pubblicazione del sito. Gli inviti generici, le bozze e le campagne programmate non entrano nell’archivio. La cadenza di GitHub può subire ritardi.
 
 Per attivarlo una sola volta:
 
@@ -22,13 +22,13 @@ Per attivarlo una sola volta:
 3. creare il repository secret `MAILERLITE_API_TOKEN` con quel token;
 4. aprire **Actions → Sincronizza Manifesti da MailerLite → Run workflow** per la prima sincronizzazione.
 
-Il token resta nei GitHub Actions secrets e non viene mai inviato al browser o salvato nel repository pubblico. Il primo Manifesto mantiene la sua impaginazione editoriale dedicata; i successivi vengono convertiti dalla versione testuale della campagna MailerLite.
+Il token resta nei GitHub Actions secrets e non viene mai inviato al browser o salvato nel repository pubblico. Il primo Manifesto mantiene la sua impaginazione editoriale dedicata. Per gli altri viene usata la versione testuale, se completa; altrimenti viene letto l’HTML della campagna o la sua anteprima pubblica, senza trasmettere a quest’ultima il token. La conversione rimuove gli elementi nascosti e il piè di pagina delle email.
 
-In assenza del token il workflow segnala un errore, anziché dare una falsa conferma di sincronizzazione. Verificare la prima importazione con una campagna già inviata; non considerare attivo il collegamento prima di questo controllo. Controllare anche che la versione testuale della campagna contenga il Manifesto completo.
+In assenza del token o di un testo leggibile il workflow segnala un errore e conserva l’archivio già pubblicato. Le modifiche allo script attivano anche una sincronizzazione di verifica.
 
 ## Verifica locale
 
-Con Node 20 o successivo: `node --test tests/app.test.cjs`. I test controllano caricamenti ritardati, link diretti ai Manifesti, diario e timer anche dopo una pausa del browser.
+Con Node 20 o successivo e Python 3: `node --test tests/*.test.*`. I test controllano caricamenti ritardati, link diretti ai Manifesti, diario, timer, numerazione delle newsletter e importazione del testo dalle anteprime HTML.
 
 ## Pubblicazione con GitHub Pages
 

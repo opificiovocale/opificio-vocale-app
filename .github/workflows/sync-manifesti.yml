@@ -2,6 +2,11 @@ name: Sincronizza Manifesti da MailerLite
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - scripts/**
+      - .github/workflows/sync-manifesti.yml
   schedule:
     - cron: "17 * * * *"
 
