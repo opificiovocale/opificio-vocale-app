@@ -1,7 +1,21 @@
 {
   "version": 1,
-  "updatedAt": "2026-09-02T00:00:00.000Z",
+  "updatedAt": "2026-09-04T14:44:46.225Z",
   "items": [
+    {
+      "id": "ml-196774375374980462",
+      "campaignId": "196774375374980462",
+      "number": "04",
+      "title": "#1 — La voce che hai imparato",
+      "date": "2026-08-25",
+      "month": "Agosto 2026",
+      "deck": "Una nuova riflessione di Manifesti delle voci libere.",
+      "excerpt": "Il software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:",
+      "bodySource": "mailerlite",
+      "bodyText": "Ciao,\n\nIl software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:\n\nNon ti interessa più? Clicca qui per cancellarti:",
+      "previewUrl": "https://preview.mailerlite.io/preview/1014402/emails/196774375385466223",
+      "deliveredAt": "2026-08-25 11:58:46"
+    },
     {
       "id": "01",
       "route": "manifesto-1",
@@ -15,6 +29,34 @@
       "bodySource": "builtin",
       "bodyText": null,
       "previewUrl": null
+    },
+    {
+      "id": "ml-196322277465261249",
+      "campaignId": "196322277465261249",
+      "number": "03",
+      "title": "#0 - La tua voce: prima di cambiarla?",
+      "date": "2026-08-20",
+      "month": "Agosto 2026",
+      "deck": "Una nuova riflessione di Manifesti delle voci libere.",
+      "excerpt": "However, your email software can't display HTML emails. You can view the newsletter by clicking here:",
+      "bodySource": "mailerlite",
+      "bodyText": "Hello,\n\nHowever, your email software can't display HTML emails. You can view the newsletter by clicking here:\n\nNot interested anymore? Click here to unsubscribe:",
+      "previewUrl": "https://preview.mailerlite.io/preview/1014402/emails/196322277484135618",
+      "deliveredAt": "2026-08-20 12:21:29"
+    },
+    {
+      "id": "ml-151848785380639751",
+      "campaignId": "151848785380639751",
+      "number": "02",
+      "title": "Ciao {$name}! Vuoi partecipare a Manifesti delle voci libere?",
+      "date": "2025-04-16",
+      "month": "Aprile 2025",
+      "deck": "Una nuova riflessione di Manifesti delle voci libere.",
+      "excerpt": "Il software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:",
+      "bodySource": "mailerlite",
+      "bodyText": "Ciao,\n\nIl software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:\n\nNon ti interessa più? Clicca qui per cancellarti:",
+      "previewUrl": "https://preview.mailerlite.io/preview/1014402/emails/151848785400562699",
+      "deliveredAt": "2025-04-16 21:19:49"
     }
   ]
 }
