@@ -156,15 +156,26 @@ function manifestoArchiveMarkup() {
     </section></div>`;
 }
 
+function linkedTextMarkup(value) {
+  let output = "", cursor = 0;
+  for (const match of String(value).matchAll(/https?:\/\/[^\s<>"']+/g)) {
+    const url = match[0].replace(/[.,;:!?)]+$/, "");
+    output += escapeHTML(value.slice(cursor, match.index));
+    output += `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(url)}</a>`;
+    cursor = match.index + url.length;
+  }
+  return output + escapeHTML(value.slice(cursor));
+}
+
 function bodyTextMarkup(value) {
   const paragraphs = String(value || "").trim().split(/\n\s*\n/).filter(Boolean);
   return paragraphs.map(paragraph => {
     const lines = paragraph.split("\n").map(line => line.trim()).filter(Boolean);
     const text = lines.join(" ");
-    const looksLikeHeading = lines.length === 1 && text.length < 90 && !/[.!?…]$/.test(text);
+    const looksLikeHeading = lines.length === 1 && text.length < 90 && !/[.!?…]$/.test(text) && !/https?:\/\//.test(text);
     if (looksLikeHeading) return `<h2>${escapeHTML(text.replace(/^#+\s*/, ""))}</h2>`;
     const className = lines.length > 1 ? ' class="voice-list"' : "";
-    return `<p${className}>${lines.map(escapeHTML).join("<br>")}</p>`;
+    return `<p${className}>${lines.map(linkedTextMarkup).join("<br>")}</p>`;
   }).join("");
 }
 

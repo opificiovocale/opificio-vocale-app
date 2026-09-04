@@ -43,6 +43,15 @@ function boot(hash = '', diary = []) {
 }
 const item = { id:'ml-2', number:'02', title:'Un testo di prova', date:'2026-09-03', excerpt:'Un testo da leggere', bodyText:'Il testo completo del Manifesto.' };
 
+test('I collegamenti audio importati sono cliccabili e il testo HTML resta innocuo', () => {
+  const app = boot();
+  const rendered = app.run(`bodyTextMarkup('https://on.soundcloud.com/audio\\n\\nAscolta https://example.test/?a=1&b=2. <script>alert(1)</script> javascript:alert(1)')`);
+  assert.match(rendered, /<p><a href="https:\/\/on.soundcloud.com\/audio"/);
+  assert.match(rendered, /href="https:\/\/example.test\/\?a=1&amp;b=2"/);
+  assert.match(rendered, /&lt;script&gt;/);
+  assert.doesNotMatch(rendered, /<script>|href="javascript:|<h2>https:/);
+});
+
 test('Un caricamento ritardato non ricrea il check-in e non perde ciò che si sta scrivendo', async () => {
   const app = boot();
   const original = app.app.innerHTML;
