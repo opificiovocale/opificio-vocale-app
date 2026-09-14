@@ -1,15 +1,19 @@
-const CACHE = "opificio-vocale-v6";
+const CACHE = "opificio-vocale-v7";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=6",
-  "./app.js?v=6",
+  "./styles.css?v=7",
+  "./app.js?v=7",
   "./manifesti.json",
-  "./manifest.webmanifest?v=6",
-  "./icon.svg?v=4",
-  "./icon-180.png?v=4",
+  "./comunicazioni.json",
+  "./manifest.webmanifest?v=7",
+  "./icon.svg?v=7",
+  "./icon-180.png?v=7",
   "./icon-192.png",
   "./icon-512.png",
+  "./icon-maskable-192.png",
+  "./icon-maskable-512.png",
+  "./mask-icon.svg?v=7",
   "./riccardo-home.webp"
 ];
 

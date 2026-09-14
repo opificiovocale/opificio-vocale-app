@@ -18,34 +18,107 @@ const external = (href, label, subtitle, mark = "↗") => `
     <span class="arrow" aria-hidden="true">${mark}</span>
   </a>`;
 
-const VOICE_WORDS = [
-  "stanca", "tesa", "fragile", "trattenuta", "libera",
-  "viva", "curiosa", "presente", "potente", "non lo so"
-];
+const VOICE_WORD_TONES = {
+  gentle: ["stanca", "tesa", "fragile", "trattenuta", "lontana", "impastata", "piccola", "incerta", "spenta", "affaticata"],
+  open: ["libera", "viva", "curiosa", "presente", "potente", "morbida", "luminosa", "stabile", "ampia", "disponibile"],
+  mixed: ["ruvida", "piena", "sottile", "mobile", "irrequieta", "sospesa", "diversa", "in trasformazione", "carica", "vuota"],
+  unknown: ["non lo so"]
+};
+
+const VOICE_WORDS = Object.values(VOICE_WORD_TONES).flat();
+let voiceWordPage = 0;
 
 const VOICE_DIARY_KEY = "opificio-voice-diary-v1";
 
 const REFLECTIONS = {
-  gentle: {
-    title: "Può stare così.",
-    copy: "Non c’è nulla da correggere adesso. Possiamo semplicemente darle un po’ di spazio.",
-    practice: "Lascia uscire un respiro senza guidarlo. Poi lascia comparire un piccolo «mmm»: non deve essere bello, pieno o lungo. Nota soltanto dove lo senti."
-  },
-  open: {
-    title: "C’è qualcosa da esplorare.",
-    copy: "C’è qualcosa da esplorare, senza doverlo trattenere o rendere migliore.",
-    practice: "Scegli una frase che dirai oggi. Dilla tre volte: una più lenta, una più ritmica, una lasciandola cambiare da sola. Nota quale possibilità ti incuriosisce."
-  },
-  unknown: {
-    title: "Anche questo è ascolto.",
-    copy: "Anche non saperlo è una risposta. Possiamo ascoltarla senza definirla.",
-    practice: "Rimani qualche secondo senza produrre suono e nota il corpo. Poi lascia comparire una vocale breve, senza prepararla e senza darle un nome."
-  },
-  mixed: {
-    title: "Può contenere più cose.",
-    copy: "La voce non deve avere un solo stato. Possiamo accorgerci di ciò che c’è, senza scegliere una definizione definitiva.",
-    practice: "Pronuncia una frase come viene. Poi cambia un solo parametro — ritmo, altezza o volume — e ripetila. Non cercare una versione migliore: nota cosa diventa possibile."
-  }
+  gentle: [
+    {
+      title: "Può stare così.",
+      copy: "Non c’è nulla da correggere adesso. Possiamo semplicemente darle un po’ di spazio.",
+      practice: "Lascia uscire un respiro senza guidarlo. Poi lascia comparire un piccolo «mmm»: non deve essere bello, pieno o lungo. Nota soltanto dove lo senti."
+    },
+    {
+      title: "Non serve spingerla.",
+      copy: "Una voce affaticata o trattenuta non ha bisogno di essere forzata. Prima può essere incontrata.",
+      practice: "Sospira senza aggiungere volume. Alla fine del respiro lascia comparire una vocale breve e comoda. Ripeti soltanto se il gesto resta facile."
+    },
+    {
+      title: "Ascolta dove si ferma.",
+      copy: "Anche una voce che oggi arriva meno lontano sta dicendo qualcosa sullo spazio che ha a disposizione.",
+      practice: "Scegli una frase quotidiana e dilla a un volume comodo. Fermati. Ripetila lasciando un po’ più di tempo tra una parola e l’altra."
+    },
+    {
+      title: "Oggi può essere piccola.",
+      copy: "La presenza non coincide sempre con la forza. A volte comincia dal non chiedersi di essere di più.",
+      practice: "Appoggia le labbra in un «mmm» leggero, poi aprile verso una vocale. Cerca continuità, non intensità."
+    }
+  ],
+  open: [
+    {
+      title: "C’è qualcosa da esplorare.",
+      copy: "La voce sembra disponibile. Puoi seguirla senza doverla fissare in una forma.",
+      practice: "Scegli una frase che dirai oggi. Dilla tre volte: più lenta, più ritmica e infine lasciandola cambiare da sola."
+    },
+    {
+      title: "Seguila senza trattenerla.",
+      copy: "Quando la voce ha energia, il gioco può diventare un modo per scoprirne altre direzioni.",
+      practice: "Lascia scivolare una vocale da un suono comodo a uno appena più alto e torna indietro. Piccolo, morbido, senza cercare un risultato."
+    },
+    {
+      title: "C’è spazio per giocare.",
+      copy: "Non devi conservare questa sensazione: puoi usarla per provare una possibilità nuova.",
+      practice: "Pronuncia la stessa frase cambiando un solo elemento alla volta: ritmo, altezza e poi volume. Nota quale versione ti sorprende."
+    },
+    {
+      title: "Lasciala occupare posto.",
+      copy: "Una voce presente può entrare in relazione con lo spazio, senza trasformarsi in una prova di forza.",
+      practice: "Di’ il tuo nome verso tre punti diversi della stanza. Non alzare necessariamente il volume: cambia la direzione dell’intenzione."
+    }
+  ],
+  unknown: [
+    {
+      title: "Anche questo è ascolto.",
+      copy: "Non saperlo è una risposta. Possiamo restare qui senza definire subito.",
+      practice: "Rimani qualche secondo senza produrre suono. Poi lascia comparire una vocale breve, senza prepararla e senza darle un nome."
+    },
+    {
+      title: "Non devi nominarla.",
+      copy: "Le parole possono arrivare dopo. Per ora basta accorgersi che una voce c’è.",
+      practice: "Nota tre punti di contatto del corpo. Poi pronuncia lentamente «sono qui» e ascolta soltanto cosa succede."
+    },
+    {
+      title: "Partiamo dal corpo.",
+      copy: "Quando la voce è difficile da leggere, il corpo può offrirci un punto di partenza più concreto.",
+      practice: "Muovi lentamente spalle e mandibola. Fermati e lascia uscire un suono qualsiasi, anche piccolissimo."
+    },
+    {
+      title: "La domanda può restare aperta.",
+      copy: "Non ogni ascolto deve produrre una risposta. Anche l’incertezza può avere una forma sonora.",
+      practice: "Pronuncia «oggi non lo so» una volta come viene. Ripetilo cambiando soltanto il ritmo e nota quale versione senti più vicina."
+    }
+  ],
+  mixed: [
+    {
+      title: "Può contenere più cose.",
+      copy: "La voce non deve avere un solo stato. Possiamo accorgerci di ciò che c’è senza scegliere una definizione definitiva.",
+      practice: "Pronuncia una frase come viene. Poi cambia un solo parametro — ritmo, altezza o volume — e ripetila."
+    },
+    {
+      title: "Non chiederle coerenza.",
+      copy: "Le qualità che sembrano opposte possono abitare la stessa voce e raccontarne il movimento.",
+      practice: "Scegli due delle parole che hai indicato. Di’ una frase lasciando emergere la prima, poi la seconda, senza decidere quale sia migliore."
+    },
+    {
+      title: "È in movimento.",
+      copy: "Una voce che cambia non è meno autentica. Sta semplicemente organizzando possibilità diverse.",
+      practice: "Conta lentamente fino a cinque e poi più velocemente. Ripeti cercando una terza velocità che non avevi previsto."
+    },
+    {
+      title: "Ascolta il contrasto.",
+      copy: "La complessità non è un errore da risolvere: può diventare materiale da esplorare.",
+      practice: "Dì una frase prima con un suono più raccolto e poi con un suono più aperto. Fermati sulla differenza, non sul giudizio."
+    }
+  ]
 };
 
 const escapeHTML = value => String(value).replace(/[&<>'"]/g, character => ({
@@ -73,6 +146,57 @@ const FALLBACK_MANIFESTI = [{
 const LAST_SEEN_MANIFESTO_KEY = "opificio-last-seen-manifesto-v1";
 let manifestiArchive = [...FALLBACK_MANIFESTI];
 let archiveLoading = true;
+let communications = [];
+
+function communicationForToday() {
+  const today = localDayKey();
+  const active = communications.filter(item =>
+    item && item.active !== false &&
+    typeof item.title === "string" &&
+    (!item.start || item.start <= today) &&
+    (!item.end || item.end >= today)
+  );
+  if (!active.length) return null;
+  const topPriority = Math.max(...active.map(item => Number(item.priority) || 0));
+  const candidates = active.filter(item => (Number(item.priority) || 0) === topPriority);
+  const dayIndex = [...today].reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  return candidates[dayIndex % candidates.length];
+}
+
+function communicationMarkup() {
+  const item = communicationForToday();
+  if (!item) return "";
+  const tones = ["sage", "rose", "mustard", "terracotta", "teal", "ivory"];
+  const tone = tones.includes(item.tone) ? item.tone : "sage";
+  const safeRoute = typeof item.route === "string" && /^[a-z0-9-]+$/.test(item.route) ? item.route : "";
+  const safeUrl = typeof item.url === "string" && /^https:\/\//.test(item.url) ? item.url : "";
+  const label = typeof item.label === "string" ? item.label : "Dal banco dell’Opificio";
+  const body = typeof item.body === "string" ? `<p>${escapeHTML(item.body)}</p>` : "";
+  const ctaLabel = typeof item.ctaLabel === "string" ? item.ctaLabel : "Scopri";
+  const cta = safeRoute
+    ? `<button class="primary-button" type="button" data-route="${escapeHTML(safeRoute)}">${escapeHTML(ctaLabel)} <span aria-hidden="true">→</span></button>`
+    : safeUrl
+      ? `<a class="primary-button" href="${escapeHTML(safeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHTML(ctaLabel)} <span aria-hidden="true">↗</span></a>`
+      : "";
+  return `<aside class="communication-zone ${tone}" aria-labelledby="communication-title">
+    <p class="content-kicker"><span>${escapeHTML(label)}</span></p>
+    <h2 id="communication-title">${escapeHTML(item.title)}</h2>
+    ${body}${cta}
+  </aside>`;
+}
+
+async function loadCommunications() {
+  try {
+    const response = await fetch("./comunicazioni.json", { cache: "no-store", signal: AbortSignal.timeout(10000) });
+    if (!response.ok) throw new Error("Comunicazioni non disponibili");
+    const data = await response.json();
+    communications = Array.isArray(data.items) ? data.items : [];
+  } catch {
+    communications = [];
+  }
+  const slot = document.querySelector("[data-communication-slot]");
+  if (slot) slot.innerHTML = communicationMarkup();
+}
 
 function requestedRoute() {
   return location.hash.slice(1);
@@ -263,18 +387,23 @@ function saveVoiceEntry(entry) {
 
 function reflectionType(entry) {
   if (entry.words.includes("non lo so")) return "unknown";
-  const gentleWords = ["stanca", "tesa", "fragile", "trattenuta"];
-  const openWords = ["libera", "viva", "curiosa", "presente", "potente"];
-  const hasGentle = entry.words.some(word => gentleWords.includes(word));
-  const hasOpen = entry.words.some(word => openWords.includes(word));
+  const hasGentle = entry.words.some(word => VOICE_WORD_TONES.gentle.includes(word));
+  const hasOpen = entry.words.some(word => VOICE_WORD_TONES.open.includes(word));
   if (hasGentle && !hasOpen) return "gentle";
   if (hasOpen && !hasGentle) return "open";
   return "mixed";
 }
 
+function reflectionFor(entry, type) {
+  const options = REFLECTIONS[type];
+  const fingerprint = [entry.date, ...entry.words, entry.note || ""].join("|");
+  const index = [...fingerprint].reduce((total, character) => total + character.charCodeAt(0), 0) % options.length;
+  return options[index];
+}
+
 function voiceReflectionMarkup(entry) {
   const type = reflectionType(entry);
-  const reflection = REFLECTIONS[type];
+  const reflection = reflectionFor(entry, type);
   const words = entry.words.length
     ? `<p class="chosen-words">${entry.words.map(escapeHTML).join(" · ")}</p>`
     : "";
@@ -329,6 +458,28 @@ function voiceDiaryMarkup() {
     </details>`;
 }
 
+function rotatedVoiceWords(words, start, count) {
+  return Array.from({ length: count }, (_, index) => words[(start + index) % words.length]);
+}
+
+function voiceWordChoices(selected = []) {
+  const daySeed = Math.floor(new Date(`${localDayKey()}T12:00:00`).getTime() / 86400000);
+  const offset = daySeed + voiceWordPage * 4;
+  const suggestions = [
+    ...rotatedVoiceWords(VOICE_WORD_TONES.gentle, offset, 4),
+    ...rotatedVoiceWords(VOICE_WORD_TONES.open, offset + 2, 4),
+    ...rotatedVoiceWords(VOICE_WORD_TONES.mixed, offset + 4, 4)
+  ];
+  return [...new Set([...suggestions, ...selected, "non lo so"])];
+}
+
+function voiceWordButtonsMarkup(selected = new Set()) {
+  return voiceWordChoices([...selected]).map(word => `
+    <button class="voice-word" type="button" data-voice-word="${escapeHTML(word)}" aria-pressed="${selected.has(word)}">
+      ${escapeHTML(word)}
+    </button>`).join("");
+}
+
 function voiceCheckInMarkup() {
   const today = loadVoiceDiary().find(entry => entry.date === localDayKey());
   const selected = new Set(today?.words || []);
@@ -343,10 +494,10 @@ function voiceCheckInMarkup() {
         <fieldset>
           <legend>Come la senti?</legend>
           <div class="voice-words">
-            ${VOICE_WORDS.map(word => `
-              <button class="voice-word" type="button" data-voice-word="${word}" aria-pressed="${selected.has(word)}">
-                ${word}
-              </button>`).join("")}
+            ${voiceWordButtonsMarkup(selected)}
+          </div>
+          <div class="voice-words-tools">
+            <button class="voice-more" type="button" data-more-voice-words>Altre parole ↻</button>
           </div>
         </fieldset>
         <label class="own-words-label" for="voiceOwnWords">Oppure usa parole tue</label>
@@ -375,6 +526,7 @@ const pages = {
           <button class="primary-button light" type="button" data-check-start>Ascoltiamola <span aria-hidden="true">↓</span></button>
         </div>
       </section>
+      <div class="communication-slot" data-communication-slot>${communicationMarkup()}</div>
       <section class="home-sections" aria-labelledby="home-sections-title">
         <p class="eyebrow">Dentro Opificio</p>
         <h2 id="home-sections-title">Tutto, da qui.</h2>
@@ -679,6 +831,19 @@ function render({ focus = false } = {}) {
 }
 
 document.addEventListener("click", event => {
+  const moreWordsButton = event.target.closest("[data-more-voice-words]");
+  if (moreWordsButton) {
+    const form = moreWordsButton.closest("form");
+    const selected = new Set([...form.querySelectorAll("[data-voice-word][aria-pressed='true']")]
+      .map(button => button.dataset.voiceWord));
+    voiceWordPage += 1;
+    form.querySelector(".voice-words").innerHTML = voiceWordButtonsMarkup(selected);
+    form.querySelector("[data-selection-status]").textContent = selected.size
+      ? `${selected.size} ${selected.size === 1 ? "parola scelta" : "parole scelte"}`
+      : "Puoi scegliere fino a 3 parole.";
+    return;
+  }
+
   const checkStart = event.target.closest("[data-check-start]");
   if (checkStart) {
     document.querySelector("#voice-check")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -827,7 +992,7 @@ document.addEventListener("submit", event => {
 
 window.addEventListener("hashchange", () => render({ focus: true }));
 render();
-loadManifestiArchive();
+loadManifestiArchive().finally(loadCommunications);
 
 let installPrompt;
 const installButton = document.querySelector("#installButton");

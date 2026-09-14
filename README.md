@@ -33,3 +33,13 @@ Con Node 20 o successivo e Python 3: `node --test tests/*.test.*`. I test contro
 ## Pubblicazione con GitHub Pages
 
 Il sito viene pubblicato dal branch `main`. In GitHub: **Settings → Pages → Deploy from a branch → main / root**.
+
+
+## Identità dell’app
+
+L’icona definitiva usa il simbolo geometrico di Opificio Vocale — esagono aperto e cerchio interno — su fondo avorio `#f1ebdd`, con segno carbone `#202421`. Gli angoli non sono incorporati nel master: vengono applicati dal sistema. Le icone adattive hanno file e finalità separati nel manifest.
+
+
+## Comunicazioni temporanee
+
+La zona “Dal banco dell’Opificio” in Home legge `comunicazioni.json`. Ogni elemento può avere `start`, `end`, `active`, `priority`, un tono cromatico e una CTA interna (`route`) o esterna (`url`). Se non esistono comunicazioni attive, la zona scompare.

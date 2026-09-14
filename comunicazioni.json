@@ -1,0 +1,18 @@
+{
+  "_istruzioni": "Aggiungi, modifica o disattiva gli elementi. I toni disponibili sono sage, rose, mustard, terracotta, teal e ivory.",
+  "items": [
+    {
+      "id": "manifesto-03",
+      "active": true,
+      "priority": 10,
+      "start": "2026-09-14",
+      "end": "2026-09-22",
+      "tone": "rose",
+      "label": "Dal banco dell’Opificio",
+      "title": "Il 22 settembre arriva un nuovo Manifesto.",
+      "body": "Una nuova riflessione sulla voce in relazione: ruoli, maschere e possibilità di scelta.",
+      "ctaLabel": "Apri i Manifesti",
+      "route": "manifesti"
+    }
+  ]
+}
