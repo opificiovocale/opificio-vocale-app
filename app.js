@@ -526,6 +526,7 @@ const pages = {
           <button class="primary-button light" type="button" data-check-start>Ascoltiamola <span aria-hidden="true">↓</span></button>
         </div>
       </section>
+      ${voiceCheckInMarkup()}
       <div class="communication-slot" data-communication-slot>${communicationMarkup()}</div>
       <section class="home-sections" aria-labelledby="home-sections-title">
         <p class="eyebrow">Dentro Opificio</p>
@@ -548,7 +549,6 @@ const pages = {
           </button>
         </div>
       </section>
-      ${voiceCheckInMarkup()}
       <div class="brand-strip">Voce cantata · Voce parlata · Identità · Espressione</div>
     </section>`,
 

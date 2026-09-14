@@ -116,7 +116,7 @@ summary:focus-visible {
 
 .voice-hero {
   position: relative;
-  min-height: 590px;
+  min-height: clamp(500px, 66dvh, 560px);
   overflow: hidden;
   background: #c8b9a2;
   color: var(--paper);
@@ -1083,7 +1083,7 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 @media (max-width: 370px) {
   .newsletter-strip { align-items: flex-start; flex-direction: column; gap: 8px; }
   .article-body { padding-inline: 22px; }
-  .voice-hero { min-height: 550px; }
+  .voice-hero { min-height: 500px; }
   .voice-hero-copy h1 { font-size: 43px; }
   .voice-check-section,
   .home-sections { padding-inline: 18px; }
