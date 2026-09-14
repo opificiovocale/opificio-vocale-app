@@ -42,4 +42,4 @@ L’icona definitiva usa il simbolo geometrico di Opificio Vocale — esagono ap
 
 ## Comunicazioni temporanee
 
-La zona “Dal banco dell’Opificio” in Home legge `comunicazioni.json`. Ogni elemento può avere `start`, `end`, `active`, `priority`, un tono cromatico e una CTA interna (`route`) o esterna (`url`). Se non esistono comunicazioni attive, la zona scompare.
+La zona “Comunicazioni” in Home legge `comunicazioni.json`. Ogni elemento può avere `start`, `end`, `active`, `priority`, un tono cromatico e una CTA interna (`route`) o esterna (`url`). Se non esistono comunicazioni attive, la zona scompare.

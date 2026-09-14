@@ -170,7 +170,7 @@ function communicationMarkup() {
   const tone = tones.includes(item.tone) ? item.tone : "sage";
   const safeRoute = typeof item.route === "string" && /^[a-z0-9-]+$/.test(item.route) ? item.route : "";
   const safeUrl = typeof item.url === "string" && /^https:\/\//.test(item.url) ? item.url : "";
-  const label = typeof item.label === "string" ? item.label : "Dal banco dell’Opificio";
+  const label = typeof item.label === "string" ? item.label : "Comunicazioni";
   const body = typeof item.body === "string" ? `<p>${escapeHTML(item.body)}</p>` : "";
   const ctaLabel = typeof item.ctaLabel === "string" ? item.ctaLabel : "Scopri";
   const cta = safeRoute
