@@ -4,10 +4,11 @@ Web app pubblica di Opificio Vocale.
 
 ## Contenuti
 
-- Home con check-in quotidiano “Oggi la tua voce come sta?”, micro-pratica e diario privato esportabile o cancellabile
-- Manifesti: player Spotify integrato, ultimo testo in evidenza e archivio completo leggibile nell’app
+- Home compatta con foto reale, check-in quotidiano “Oggi la tua voce come sta?” e riepilogo modificabile dopo il salvataggio
+- Check-in: 31 parole, 28 restituzioni in 8 gruppi e tre intenzioni (ascoltarmi, esplorare, lasciare una traccia). L’ascolto propone osservazioni senza produrre voce; la sola traccia non propone esercizi. Le note libere non vengono interpretate e non influenzano la scelta della proposta
+- Manifesti: lettore Spotify persistente e riducibile, ultimo testo in evidenza e archivio completo leggibile nell’app. Il lettore viene caricato su richiesta; cambiare sezione non ricrea l’iframe, mentre “Chiudi” interrompe l’ascolto. La riproduzione effettiva resta soggetta alle condizioni e alla disponibilità del servizio Spotify
 - Audioteca: accessi distinti all’area generale e alle esperienze gratuite
-- Percorsi: Check Vocale, Reset Vocale, Vocal Boom e Vocal Hit
+- Percorsi: ingresso dedicato all’affermazione vocale, Check Vocale, Reset Vocale, Vocal Boom e Vocal Hit
 
 L’app è una PWA statica, mobile-first e installabile anche su iPhone. Non richiede login, database o costi di hosting. Il diario della voce usa esclusivamente lo spazio locale del dispositivo.
 
@@ -43,3 +44,5 @@ L’icona definitiva usa il simbolo geometrico di Opificio Vocale — esagono ap
 ## Comunicazioni temporanee
 
 La zona “Comunicazioni” in Home legge `comunicazioni.json`. Ogni elemento può avere `start`, `end`, `active`, `priority`, un tono cromatico e una CTA interna (`route`) o esterna (`url`). Se non esistono comunicazioni attive, la zona scompare.
+
+Manifesti e Comunicazioni vengono aggiornati dalla rete quando disponibile e conservati per l’uso offline. Il diario resta locale, mantiene le voci delle versioni precedenti e non richiede un account. Non è stato aggiunto un pannello di amministrazione né un servizio AI per analizzare le note.

@@ -132,3 +132,159 @@ test('Il service worker lascia le risorse esterne al browser', () => {
   handlers.fetch({request:{method:'GET',url:'https://open.spotify.com/embed/show/test'},respondWith(){handled=true;}});
   assert.equal(handled, false);
 });
+
+test('Stanchezza, tensione, fragilità e voce trattenuta hanno proposte distinte', () => {
+  const app = boot();
+  for (const [word, category] of [['stanca','tired'],['tesa','tense'],['fragile','fragile'],['trattenuta','held'],['curiosa','open']]) {
+    assert.equal(app.run(`reflectionType({words:[${JSON.stringify(word)}]})`), category);
+  }
+  assert.equal(app.run(`reflectionType({words:['stanca','libera']})`), 'tired');
+  assert.equal(app.run(`reflectionType({words:[], note:'Non viene interpretata'})`), 'unknown');
+  assert.equal(app.run(`reflectionType({words:['tesa','libera']})`), 'mixed');
+});
+
+test('Le note libere e l’ordine delle parole non modificano la proposta', () => {
+  const app = boot();
+  const one = app.run(`JSON.stringify(reflectionFor({date:'2026-09-15', words:['tesa','fragile'], note:'prima'}, 'tense'))`);
+  const two = app.run(`JSON.stringify(reflectionFor({date:'2026-09-15', words:['fragile','tesa'], note:'seconda'}, 'tense'))`);
+  assert.equal(one, two);
+});
+
+test('La sola traccia non suggerisce esercizi e l’ascolto non chiede di produrre voce', () => {
+  const app = boot();
+  const trace = app.run(`voiceReflectionMarkup({date:'2026-09-15', words:['stanca'],note:'<img onerror=alert(1)>',intent:'note'})`);
+  assert.match(trace, /Può bastare questo/);
+  assert.match(trace, /&lt;img/);
+  assert.doesNotMatch(trace, /data-minute-start|data-practice-toggle|<img/);
+  const listen = app.run(`voiceReflectionMarkup({date:'2026-09-15',words:['curiosa'],note:'',intent:'listen'})`);
+  assert.match(listen, /senza voce/);
+  assert.match(listen, /mentalmente|Ripensa/);
+});
+
+test('Ogni parola e intenzione produce una restituzione completa', () => {
+  const app = boot();
+  assert.equal(app.run(`VOICE_WORDS.every(word => Object.keys(VOICE_INTENTS).every(intent => {
+    const html = voiceReflectionMarkup({date:'2026-09-15',words:[word],note:'',intent});
+    return html.includes('reflection-title') && !html.includes('undefined');
+  }))`), true);
+  assert.equal(app.run('Object.values(REFLECTIONS).flat().length'), 28);
+});
+
+test('Le nuove intenzioni preservano il diario precedente', () => {
+  const app = boot('', [{date:'2026-09-04',words:['curiosa'],note:'Conservami'}]);
+  assert.equal(app.run('loadVoiceDiary()[0].intent'), 'listen');
+  assert.equal(app.run('loadVoiceDiary()[0].note'), 'Conservami');
+  app.run(`saveVoiceEntry({date:'2026-09-04',words:['curiosa'],note:'Conservami',intent:'note'})`);
+  assert.equal(app.run('loadVoiceDiary()[0].intent'), 'note');
+  assert.match(app.app.innerHTML, /id="voiceCheckIn" novalidate hidden/);
+  assert.match(app.app.innerHTML, /data-check-edit/);
+});
+
+test('Altre parole mantiene la selezione e permette di raggiungere tutte le parole', () => {
+  const app = boot();
+  assert.equal(app.run('voiceWordChoices().length'), 7);
+  assert.equal(app.run(`(() => { const seen = new Set(); for (let page = 0; page < 10; page++) {
+    voiceWordPage = page; voiceWordChoices(['fragile']).forEach(word => seen.add(word));
+    if (!voiceWordChoices(['fragile']).includes('fragile')) return false;
+  } return seen.size === VOICE_WORDS.length; })()`), true);
+});
+
+test('Il lettore resta fuori dalle pagine e non viene ricreato navigando', () => {
+  const app = boot('#manifesti');
+  const classes = new Set();
+  const classList = {toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); }};
+  const label = {};
+  const toggle = {setAttribute(){},focus(){}};
+  const dock = {hidden:true,classList,querySelector:s => s === '[data-player-toggle-label]' ? label : toggle};
+  let mounts = 0, html = '';
+  const frame = {inert:false,querySelector:() => html ? {stable:true} : null, get innerHTML(){return html;}, set innerHTML(v){html=v; mounts++;}};
+  app.nodes.set('#podcastPlayer', dock);
+  app.nodes.set('#podcastFrame', frame);
+  app.nodes.set('.app-shell', {classList});
+  app.run('openPodcastPlayer()');
+  assert.equal(mounts, 1);
+  app.run(`location.hash='#home'; render(); setPodcastExpanded(false)`);
+  assert.equal(frame.inert, true);
+  assert.match(html, /open.spotify.com\/embed/);
+  app.run(`location.hash='#manifesto-1'; render(); openPodcastPlayer()`);
+  assert.equal(mounts, 1);
+  assert.equal(frame.inert, false);
+  assert.equal(dock.hidden, false);
+  app.events.click({target:{closest: s => s === '[data-podcast-close]' ? {} : null}});
+  assert.equal(html, '');
+  assert.equal(dock.hidden, true);
+  assert.equal(classes.has('has-player'), false);
+  const shell = readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  assert.ok(shell.indexOf('id="podcastPlayer"') > shell.indexOf('</main>'));
+  assert.doesNotMatch(app.app.innerHTML, /<iframe/);
+});
+
+test('Le Comunicazioni rispettano intervallo, priorità e testo sicuro', () => {
+  const app = boot();
+  app.run(`communications = [
+    {title:'Scaduta',end:'2026-09-03',priority:99},
+    {title:'Futura',start:'2026-09-05',priority:99},
+    {title:'Spenta',active:false,priority:99},
+    {title:'<script>prova</script>',start:'2026-09-04',end:'2026-09-04',priority:2,url:'javascript:alert(1)'},
+    {title:'Secondaria',priority:1}
+  ]`);
+  const html = app.run('communicationMarkup()');
+  assert.match(html, /&lt;script&gt;/);
+  assert.doesNotMatch(html, /Scaduta|Futura|Spenta|Secondaria|href="javascript:/);
+});
+
+test('Le Comunicazioni usano la rete prima della cache', async () => {
+  const handlers = {};
+  const used = [];
+  const response = {status:200,clone(){return this;}};
+  vm.runInNewContext(readFileSync(path.join(__dirname,'../sw.js'),'utf8'), {
+    self:{location:{origin:'https://example.test'},addEventListener:(name,handler)=>{handlers[name]=handler;}},
+    URL,fetch:async()=>{used.push('network');return response;},caches:{open:async()=>({put(){used.push('cache-write');}}),match:async()=>{used.push('cache-read');return response;}}
+  });
+  let result;
+  handlers.fetch({request:{method:'GET',url:'https://example.test/comunicazioni.json'},respondWith(p){result=p;}});
+  assert.equal(await result,response);
+  assert.equal(used[0],'network');
+});
+
+test('Percorsi include l’affermazione vocale senza perdere le quattro offerte', () => {
+  const app = boot('#percorsi');
+  for (const title of ['Affermazione vocale','Check Vocale','Reset Vocale','Vocal Boom','Vocal Hit']) assert.ok(app.app.innerHTML.includes(title));
+  assert.match(app.app.innerHTML,/https:\/\/opificiovocale.it\/gender-affirming-voice-training\//);
+});
+
+test('Il modulo salva l’intenzione, si compatta e si riapre senza perdere la nota', () => {
+  const app = boot();
+  const status = {}, submit = {}, summary = {hidden:true};
+  const reflection = {innerHTML:'',scrollIntoView(){}};
+  let focused = false;
+  const word = {dataset:{voiceWord:'curiosa'},focus(){focused=true;}};
+  const form = {id:'voiceCheckIn',hidden:false,elements:{voiceOwnWords:{value:'Una nota di prova'},voiceIntent:{value:'note'}},
+    querySelectorAll(){return [word];},querySelector(s){return s === '.check-submit' ? submit : s === '[data-voice-word]' ? word : status;}};
+  app.nodes.set('#voiceCheckIn',form);
+  app.nodes.set('#voiceReflection',reflection);
+  app.nodes.set('#voiceDiary',{});
+  app.nodes.set('[data-check-complete]',summary);
+  app.events.submit({target:form,preventDefault(){}});
+  assert.equal(app.run('loadVoiceDiary()[0].intent'),'note');
+  assert.equal(app.run('loadVoiceDiary()[0].note'),'Una nota di prova');
+  assert.equal(form.hidden,true);
+  assert.equal(summary.hidden,false);
+  assert.doesNotMatch(reflection.innerHTML,/data-minute-start/);
+  app.events.click({target:{closest:s=>s === '[data-check-edit]' ? {} : null}});
+  assert.equal(form.hidden,false);
+  assert.equal(focused,true);
+  assert.equal(form.elements.voiceOwnWords.value,'Una nota di prova');
+});
+
+test('Una risposta vuota resta correggibile senza salvare una traccia', () => {
+  const app = boot();
+  const status = {};
+  let focused = false;
+  const form = {id:'voiceCheckIn',elements:{voiceOwnWords:{value:''}},querySelectorAll(){return [];},
+    querySelector(s){return s === '[data-voice-word]' ? {focus(){focused=true;}} : status;}};
+  app.events.submit({target:form,preventDefault(){}});
+  assert.equal(app.run('loadVoiceDiary().length'),0);
+  assert.match(status.textContent,/Scegli almeno una parola/);
+  assert.equal(focused,true);
+});

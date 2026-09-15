@@ -1,9 +1,9 @@
-const CACHE = "opificio-vocale-v8";
+const CACHE = "opificio-vocale-v9";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=8",
-  "./app.js?v=8",
+  "./styles.css?v=9",
+  "./app.js?v=9",
   "./manifesti.json",
   "./comunicazioni.json",
   "./manifest.webmanifest?v=7",
@@ -34,7 +34,7 @@ self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
   if (new URL(event.request.url).origin !== self.location.origin) return;
 
-  if (new URL(event.request.url).pathname.endsWith("/manifesti.json")) {
+  if (/\/(manifesti|comunicazioni)\.json$/.test(new URL(event.request.url).pathname)) {
     event.respondWith(
       fetch(event.request)
         .then(response => {

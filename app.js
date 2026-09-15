@@ -6,7 +6,8 @@ const LINKS = {
   free: "https://audiotecaopificiovocale.subscribepage.io",
   resetCheck: "https://opificiovocale.mailerpage.io/resetcheck",
   vocalBoom: "https://opificiovocale.mailerpage.io/vocalboom",
-  vocalHit: "https://opificiovocale.mailerpage.io/vocalhit"
+  vocalHit: "https://opificiovocale.mailerpage.io/vocalhit",
+  affirming: "https://opificiovocale.it/gender-affirming-voice-training/"
 };
 
 const app = document.querySelector("#app");
@@ -29,6 +30,8 @@ const VOICE_WORDS = Object.values(VOICE_WORD_TONES).flat();
 let voiceWordPage = 0;
 
 const VOICE_DIARY_KEY = "opificio-voice-diary-v1";
+const VOICE_INTENTS = { listen: "Ascoltarmi", explore: "Esplorare", note: "Lasciare una traccia" };
+const voiceIntent = entry => Object.hasOwn(VOICE_INTENTS, entry.intent) ? entry.intent : "listen";
 
 const REFLECTIONS = {
   gentle: [
@@ -119,6 +122,41 @@ const REFLECTIONS = {
       practice: "Dì una frase prima con un suono più raccolto e poi con un suono più aperto. Fermati sulla differenza, non sul giudizio."
     }
   ]
+};
+
+// Le note libere sono private: non vengono interpretate per scegliere le proposte.
+Object.assign(REFLECTIONS, {
+  tired: [
+    { title: "Oggi puoi chiedere meno.", copy: "Hai scelto una parola di stanchezza. Non serve trasformare questo momento in un allenamento.", practice: "Pensa a una situazione di oggi in cui puoi evitare di alzare la voce. Puoi avvicinarti a chi ascolta o scegliere un posto più tranquillo?" },
+    { title: "C'è posto anche per una pausa.", copy: "Puoi fermarti qui. Avere ascoltato la stanchezza è già una scelta.", practice: "Resta un minuto senza produrre suono. Nota cosa succede quando non chiedi alla voce di fare altro." },
+    { title: "Non devi recuperare subito.", copy: "La parola che hai scelto può bastare a descrivere questo momento, senza diventare un compito.", practice: "Individua una cosa che puoi rimandare e una che oggi ti va di dire. Non occorre pronunciarle: puoi soltanto pensarle." }
+  ],
+  tense: [
+    { title: "Da dove vuoi cominciare?", copy: "Hai nominato una tensione. Puoi osservarla senza decidere subito come cambiarla.", practice: "Scegli una frase breve. Dilla una volta come viene, poi lasciando una pausa in più. Osserva soltanto il ritmo." },
+    { title: "Puoi prenderti il tuo tempo.", copy: "Non è necessario rispondere immediatamente, neanche a questa domanda.", practice: "Immagina una conversazione di oggi. Dove potresti concederti un momento prima di rispondere? Prova a lasciare quella pausa." },
+    { title: "Un dettaglio alla volta.", copy: "Per questo minuto puoi scegliere un solo elemento da osservare.", practice: "Pronuncia una frase comoda prima lentamente, poi al tuo ritmo abituale. Se non ti va di usare la voce, immagina le due versioni." }
+  ],
+  held: [
+    { title: "Con chi cambia?", copy: "Hai descritto una voce che senti trattenuta o distante. Da una parola non possiamo sapere il perché.", practice: "Scegli una frase quotidiana e immagina di dirla a due persone diverse. Nota se cambia già il modo in cui la immagini, senza obbligarti a pronunciarla." },
+    { title: "Puoi scegliere quanto mostrare.", copy: "Non devi rendere la voce più grande per forza. Puoi cominciare dalla situazione in cui ti trovi.", practice: "Pensa a un luogo in cui ti è più facile parlare. Scegli un dettaglio di quel luogo che potresti ritrovare anche qui." },
+    { title: "Una frase che ti somiglia.", copy: "Oggi puoi partire da qualcosa di piccolo e concreto, senza cercare una voce ideale.", practice: "Scegli una frase che vorresti dire. Provala a un volume comodo, oppure scrivila soltanto. Quale parola vuoi far arrivare?" }
+  ],
+  fragile: [
+    { title: "Puoi procedere piano.", copy: "Hai scelto una parola di fragilità o incertezza. Non c'è bisogno di metterti alla prova.", practice: "Scegli una parola che oggi ti va di dire. Puoi pronunciarla come viene oppure tenerla scritta. Fermati alla versione che senti più vicina." },
+    { title: "Non serve decidere tutto.", copy: "Questa è una traccia di oggi, non una definizione della tua voce.", practice: "Pensa alla prossima conversazione: scegli una sola cosa da osservare, per esempio le pause. Il resto può restare com'è." },
+    { title: "C'è spazio per un tentativo.", copy: "Puoi provare qualcosa e cambiare idea. Puoi anche non provare nulla adesso.", practice: "Dì una breve frase quotidiana senza prepararla. Se ti va, ripetila una volta. Nota una differenza senza darle un voto." }
+  ]
+});
+
+const LISTENING_PROMPTS = {
+  tired: ["Per un minuto non aggiungere suono. Nota che cosa ti va di lasciare in sospeso.", "Pensa a quando hai iniziato a sentire la stanchezza oggi. Non serve trovarne la causa: basta ricordare il momento."],
+  tense: ["Nota i punti in cui il corpo tocca la sedia o il pavimento. Non devi cambiare postura né guidare il respiro.", "Ascolta un suono vicino e uno lontano. Per questo minuto non devi rispondere a nessuno dei due."],
+  held: ["Pensa a chi vorresti avere davanti mentre parli. Che cosa rende più facile quella relazione?", "Ripensa a un momento in cui ti è venuto spontaneo parlare. Osserva il contesto, senza cercare di riprodurre la voce."],
+  fragile: ["Nota una cosa che oggi ti fa sentire a tuo agio. Può non avere nulla a che fare con la voce.", "Lascia che la parola scelta descriva soltanto oggi. C'è qualcosa che vorresti aggiungere, senza correggerla?"],
+  gentle: ["Resta qualche istante in silenzio. Non occorre preparare il prossimo suono.", "Nota come ti senti nel posto in cui sei. Puoi limitarti a questo, senza produrre voce."],
+  open: ["Ripensa a un momento di oggi in cui parlare ti è sembrato facile. Con chi eri?", "Che cosa ti va di dire oggi? Scegli una frase mentalmente, senza doverla provare."],
+  mixed: ["Lascia vicine le parole che hai scelto, anche se sembrano opposte. Quale descrive meglio questo preciso momento?", "Pensa a due momenti diversi della giornata. Le parole che hai scelto appartengono allo stesso momento o a situazioni diverse?"],
+  unknown: ["Ascolta i suoni intorno a te per qualche istante. Non devi trovare una parola per la tua voce.", "Nota come stai entrando in questo momento: con curiosità, fretta o altro. Puoi lasciare la domanda aperta."]
 };
 
 const escapeHTML = value => String(value).replace(/[&<>'"]/g, character => ({
@@ -365,7 +403,8 @@ function loadVoiceDiary() {
       .map(entry => ({
         ...entry,
         words: Array.isArray(entry.words) ? [...new Set(entry.words.filter(word => VOICE_WORDS.includes(word)))].slice(0, 3) : [],
-        note: typeof entry.note === "string" ? entry.note.slice(0, 140) : ""
+        note: typeof entry.note === "string" ? entry.note.slice(0, 140) : "",
+        intent: voiceIntent(entry)
       }))
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, 90);
@@ -386,9 +425,14 @@ function saveVoiceEntry(entry) {
 }
 
 function reflectionType(entry) {
-  if (entry.words.includes("non lo so")) return "unknown";
+  if (!entry.words.length || entry.words.includes("non lo so")) return "unknown";
   const hasGentle = entry.words.some(word => VOICE_WORD_TONES.gentle.includes(word));
   const hasOpen = entry.words.some(word => VOICE_WORD_TONES.open.includes(word));
+  if (entry.words.some(word => ["stanca", "affaticata", "spenta"].includes(word))) return "tired";
+  if (hasGentle && hasOpen) return "mixed";
+  if (entry.words.some(word => ["tesa", "irrequieta"].includes(word))) return "tense";
+  if (entry.words.some(word => ["fragile", "incerta"].includes(word))) return "fragile";
+  if (entry.words.some(word => ["trattenuta", "piccola", "lontana"].includes(word))) return "held";
   if (hasGentle && !hasOpen) return "gentle";
   if (hasOpen && !hasGentle) return "open";
   return "mixed";
@@ -396,7 +440,7 @@ function reflectionType(entry) {
 
 function reflectionFor(entry, type) {
   const options = REFLECTIONS[type];
-  const fingerprint = [entry.date, ...entry.words, entry.note || ""].join("|");
+  const fingerprint = [entry.date, ...[...entry.words].sort()].join("|");
   const index = [...fingerprint].reduce((total, character) => total + character.charCodeAt(0), 0) % options.length;
   return options[index];
 }
@@ -404,6 +448,10 @@ function reflectionFor(entry, type) {
 function voiceReflectionMarkup(entry) {
   const type = reflectionType(entry);
   const reflection = reflectionFor(entry, type);
+  const intent = voiceIntent(entry);
+  const listening = LISTENING_PROMPTS[type];
+  const day = Number(entry.date.replace(/-/g, "")) || 0;
+  const practice = intent === "listen" ? listening[day % listening.length] : reflection.practice;
   const words = entry.words.length
     ? `<p class="chosen-words">${entry.words.map(escapeHTML).join(" · ")}</p>`
     : "";
@@ -412,21 +460,23 @@ function voiceReflectionMarkup(entry) {
     : "";
 
   return `
-    <section class="voice-reflection ${type}" aria-labelledby="reflection-title">
-      <p class="content-kicker"><span>Il tuo specchio</span> · Oggi</p>
-      <h3 id="reflection-title">${reflection.title}</h3>
+    <section class="voice-reflection ${type}" tabindex="-1" aria-labelledby="reflection-title">
+      <p class="content-kicker"><span>${intent === "note" ? "La tua traccia" : "La proposta di oggi"}</span></p>
+      <h3 id="reflection-title">${intent === "note" ? "Può bastare questo." : reflection.title}</h3>
       ${words}${ownWords}
-      <p class="reflection-copy">${reflection.copy}</p>
+      <p class="reflection-copy">${intent === "note" ? "Hai dato spazio a come la senti oggi. Non c'è un esercizio da fare: puoi fermarti qui." : reflection.copy}</p>
+      ${intent === "note" ? "" : `
       <button class="outline-button" type="button" data-practice-toggle aria-expanded="false">
-        Un minuto per ascoltarla <span aria-hidden="true">＋</span>
+        ${intent === "listen" ? "Un minuto di ascolto, senza voce" : "Esplora la proposta"} <span aria-hidden="true">＋</span>
       </button>
       <div class="micro-practice" hidden>
-        <p>${reflection.practice}</p>
+        <p>${practice}</p>
         <button class="minute-button" type="button" data-minute-start>
           Avvia il minuto <span data-minute-label>1:00</span>
         </button>
         <p class="minute-status" data-minute-status aria-live="polite"></p>
-      </div>
+      </div>`}
+      <p class="proposal-note">Uno spunto generale, non una valutazione della tua voce. Puoi fermarti o saltarlo in qualsiasi momento.</p>
     </section>`;
 }
 
@@ -466,9 +516,9 @@ function voiceWordChoices(selected = []) {
   const daySeed = Math.floor(new Date(`${localDayKey()}T12:00:00`).getTime() / 86400000);
   const offset = daySeed + voiceWordPage * 4;
   const suggestions = [
-    ...rotatedVoiceWords(VOICE_WORD_TONES.gentle, offset, 4),
-    ...rotatedVoiceWords(VOICE_WORD_TONES.open, offset + 2, 4),
-    ...rotatedVoiceWords(VOICE_WORD_TONES.mixed, offset + 4, 4)
+    ...rotatedVoiceWords(VOICE_WORD_TONES.gentle, offset, 2),
+    ...rotatedVoiceWords(VOICE_WORD_TONES.open, offset + 2, 2),
+    ...rotatedVoiceWords(VOICE_WORD_TONES.mixed, offset + 4, 2)
   ];
   return [...new Set([...suggestions, ...selected, "non lo so"])];
 }
@@ -490,7 +540,11 @@ function voiceCheckInMarkup() {
         <h2 id="voice-check-title">Dalle una parola.</h2>
         <p>Scegli fino a tre parole oppure scrivila come viene. Non c’è una risposta giusta.</p>
       </div>
-      <form class="voice-check-card" id="voiceCheckIn" novalidate>
+      <div class="check-complete" data-check-complete ${today ? "" : "hidden"}>
+        <p>Il tuo ascolto di oggi è qui.</p>
+        <button class="text-link" type="button" data-check-edit>Modifica le parole o la proposta</button>
+      </div>
+      <form class="voice-check-card" id="voiceCheckIn" novalidate ${today ? "hidden" : ""}>
         <fieldset>
           <legend>Come la senti?</legend>
           <div class="voice-words">
@@ -500,11 +554,19 @@ function voiceCheckInMarkup() {
             <button class="voice-more" type="button" data-more-voice-words>Altre parole ↻</button>
           </div>
         </fieldset>
-        <label class="own-words-label" for="voiceOwnWords">Oppure usa parole tue</label>
+        <details class="own-words-details" ${today?.note ? "open" : ""}>
+        <summary>Oppure usa parole tue</summary>
+        <label class="own-words-label" for="voiceOwnWords">La tua nota</label>
         <textarea id="voiceOwnWords" name="voiceOwnWords" maxlength="140" rows="3" placeholder="Per esempio: impastata, lontana, pronta a uscire…">${escapeHTML(today?.note || "")}</textarea>
+        <p class="proposal-note">Le note restano nel tuo diario: non vengono interpretate per scegliere una proposta.</p>
+        </details>
+        <fieldset class="voice-intents">
+          <legend>Oggi mi va di…</legend>
+          ${Object.entries(VOICE_INTENTS).map(([value, label]) => `<label><input type="radio" name="voiceIntent" value="${value}" ${voiceIntent(today || {}) === value ? "checked" : ""}><span>${label}</span></label>`).join("")}
+        </fieldset>
         <p class="selection-status" data-selection-status aria-live="polite">${selected.size ? `${selected.size} ${selected.size === 1 ? "parola scelta" : "parole scelte"}` : "Puoi scegliere fino a 3 parole."}</p>
         <button class="primary-button check-submit" type="submit">
-          ${today ? "Aggiorna il mio ascolto" : "Restituiscimi uno specchio"} <span aria-hidden="true">→</span>
+          ${today ? "Aggiorna il mio ascolto" : "Continua"} <span aria-hidden="true">→</span>
         </button>
         <p class="privacy-note"><span aria-hidden="true">○</span> Resta soltanto su questo dispositivo.</p>
       </form>
@@ -520,10 +582,9 @@ const pages = {
         <img src="./riccardo-home.webp" alt="Riccardo Primitivo Fiorucci, vocal trainer di Opificio Vocale">
         <div class="voice-hero-shade" aria-hidden="true"></div>
         <div class="voice-hero-copy">
-          <p class="eyebrow">Il check-in di oggi</p>
+          <p class="eyebrow">Uno spazio per la tua voce</p>
           <h1 id="home-title">Oggi la tua voce<br><em>come sta?</em></h1>
-          <p>Non come dovrebbe stare.<br>Come sta davvero.</p>
-          <button class="primary-button light" type="button" data-check-start>Ascoltiamola <span aria-hidden="true">↓</span></button>
+          <p>Partiamo da come la senti.</p>
         </div>
       </section>
       ${voiceCheckInMarkup()}
@@ -563,15 +624,8 @@ const pages = {
         <p class="content-kicker"><span>Ascolta</span> · Podcast</p>
         <h2 id="podcast-title">La voce,<br>in forma sonora.</h2>
         <p>Gli episodi di Manifesti delle voci libere, direttamente qui.</p>
-        <iframe
-          class="spotify-player"
-          title="Podcast Manifesti delle voci libere su Spotify"
-          src="${LINKS.spotifyEmbed}"
-          width="100%"
-          height="326"
-          loading="lazy"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        ></iframe>
+        <button class="primary-button" type="button" data-podcast-open>Apri il lettore <span aria-hidden="true">▷</span></button>
+        <p class="player-explanation">Avvia l'episodio dal lettore. Puoi continuare a esplorare l'app: il lettore resta con te.</p>
         <a class="text-link" href="${LINKS.spotify}" target="_blank" rel="noopener noreferrer">Apri su Spotify <span aria-hidden="true">↗</span></a>
       </section>
       ${manifestoArchiveMarkup()}
@@ -702,16 +756,16 @@ const pages = {
         <p class="panel-copy">Pratiche guidate da attraversare con le cuffie, senza fretta e senza prestazione.</p>
       </div>
       <div class="audioteca-body">
-        <p class="audioteca-intro">Uno spazio da esplorare: ascolti e pratiche vocali per fare esperienza prima ancora di cercare una risposta.</p>
+        <p class="audioteca-intro">Scegli da dove cominciare. I due accessi aprono una pagina esterna con gli ascolti disponibili.</p>
         <div class="audioteca-portals">
           <a class="audio-portal free-portal" href="${LINKS.free}" target="_blank" rel="noopener noreferrer">
             <span class="portal-mark" aria-hidden="true">◌</span>
-            <span><small>Accesso libero</small><strong>Esperienze gratuite</strong><em>Inizia da un ascolto guidato.</em></span>
+            <span><small>Accesso libero · Pagina esterna</small><strong>Esperienze gratuite</strong><em>Inizia da un ascolto guidato.</em></span>
             <span class="arrow" aria-hidden="true">↗</span>
           </a>
           <a class="audio-portal full-portal" href="${LINKS.audioteca}" target="_blank" rel="noopener noreferrer">
             <span class="portal-mark" aria-hidden="true">◎</span>
-            <span><small>Esplora</small><strong>Audioteca completa</strong><em>Tutte le pratiche disponibili.</em></span>
+            <span><small>Esplora · Pagina esterna</small><strong>Audioteca completa</strong><em>Tutte le pratiche disponibili.</em></span>
             <span class="arrow" aria-hidden="true">↗</span>
           </a>
         </div>
@@ -726,17 +780,20 @@ const pages = {
         <p class="panel-copy">Lavoriamo sulla voce che parli, canti e scegli di portare nel mondo.</p>
       </div>
       <div class="routes">
-        <a class="route-card" href="${LINKS.resetCheck}" target="_blank" rel="noopener noreferrer">
-          <span class="route-number">01</span><span><small>Voce parlata · Sessione</small><h2>Check Vocale</h2><p>Osserva gli automatismi e sperimenta nuove possibilità.</p></span><span class="arrow" aria-hidden="true">↗</span>
+        <a class="route-card affirming-card" href="${LINKS.affirming}" target="_blank" rel="noopener noreferrer">
+          <span class="route-number" aria-hidden="true">↗</span><span><small>Voce e identità · Scopri il lavoro insieme</small><h2>Affermazione vocale</h2><p>Per esplorare la relazione tra voce, espressione e identità di genere, a partire dai tuoi desideri.</p></span><span class="arrow" aria-hidden="true">↗</span>
         </a>
         <a class="route-card" href="${LINKS.resetCheck}" target="_blank" rel="noopener noreferrer">
-          <span class="route-number">02</span><span><small>Voce parlata · Percorso guidato</small><h2>Reset Vocale</h2><p>Sette giorni di pratica e feedback personale.</p></span><span class="arrow" aria-hidden="true">↗</span>
+          <span class="route-number">01</span><span><small>Voce parlata · Sessione</small><h2>Check Vocale</h2><p>Per chi vuole fare il punto sulla propria voce: osserviamo abitudini e possibilità in una sessione.</p></span><span class="arrow" aria-hidden="true">↗</span>
+        </a>
+        <a class="route-card" href="${LINKS.resetCheck}" target="_blank" rel="noopener noreferrer">
+          <span class="route-number">02</span><span><small>Voce parlata · Percorso guidato</small><h2>Reset Vocale</h2><p>Per portare l'esplorazione nel quotidiano: sette giorni di pratica e feedback personale.</p></span><span class="arrow" aria-hidden="true">↗</span>
         </a>
         <a class="route-card" href="${LINKS.vocalBoom}" target="_blank" rel="noopener noreferrer">
-          <span class="route-number">03</span><span><small>Voce cantata · Percorso</small><h2>Vocal Boom</h2><p>Tecnica ed espressione senza inseguire un modello.</p></span><span class="arrow" aria-hidden="true">↗</span>
+          <span class="route-number">03</span><span><small>Voce cantata · Percorso</small><h2>Vocal Boom</h2><p>Per chi cerca continuità nel canto: lavoriamo su tecnica ed espressione attraverso più incontri.</p></span><span class="arrow" aria-hidden="true">↗</span>
         </a>
         <a class="route-card" href="${LINKS.vocalHit}" target="_blank" rel="noopener noreferrer">
-          <span class="route-number">04</span><span><small>Voce cantata · Sessione</small><h2>Vocal Hit</h2><p>Una domanda concreta, un primo passo sulla tua voce.</p></span><span class="arrow" aria-hidden="true">↗</span>
+          <span class="route-number">04</span><span><small>Voce cantata · Sessione</small><h2>Vocal Hit</h2><p>Per una domanda concreta sul canto: una sessione dedicata a ciò che vuoi esplorare.</p></span><span class="arrow" aria-hidden="true">↗</span>
         </a>
       </div>
     </section>`
@@ -799,6 +856,33 @@ function updateManifestoBadges() {
   else if (unseen) document.querySelector(".section-card-end")?.insertAdjacentHTML("afterbegin", newManifestoBadgeMarkup());
 }
 
+function openPodcastPlayer() {
+  const dock = document.querySelector("#podcastPlayer");
+  const frame = document.querySelector("#podcastFrame");
+  if (!dock || !frame) return;
+  if (!frame.querySelector("iframe")) {
+    frame.innerHTML = `<iframe title="Podcast Manifesti delle voci libere su Spotify" src="${LINKS.spotifyEmbed}" width="100%" height="152" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
+  }
+  dock.hidden = false;
+  setPodcastExpanded(true);
+  dock.querySelector("[data-podcast-toggle]")?.focus();
+}
+
+function setPodcastExpanded(expanded) {
+  const dock = document.querySelector("#podcastPlayer");
+  if (!dock) return;
+  dock.classList.toggle("is-collapsed", !expanded);
+  // Non spostare né ricreare l'iframe: conserva l'episodio durante la navigazione.
+  const frame = document.querySelector("#podcastFrame");
+  if (frame) frame.inert = !expanded;
+  dock.querySelector("[data-podcast-toggle]")?.setAttribute("aria-expanded", String(expanded));
+  const label = dock.querySelector("[data-player-toggle-label]");
+  if (label) label.textContent = expanded ? "Riduci" : "Apri lettore";
+  const shell = document.querySelector(".app-shell");
+  shell?.classList.toggle("has-player", !dock.hidden);
+  shell?.classList.toggle("player-expanded", expanded && !dock.hidden);
+}
+
 function render({ focus = false } = {}) {
   window.clearInterval(minuteInterval);
   const route = currentRoute();
@@ -831,6 +915,26 @@ function render({ focus = false } = {}) {
 }
 
 document.addEventListener("click", event => {
+  if (event.target.closest("[data-podcast-open]")) { openPodcastPlayer(); return; }
+  const playerToggle = event.target.closest("[data-podcast-toggle]");
+  if (playerToggle) {
+    setPodcastExpanded(playerToggle.getAttribute("aria-expanded") !== "true");
+    return;
+  }
+  if (event.target.closest("[data-podcast-close]")) {
+    document.querySelector("#podcastFrame").innerHTML = "";
+    document.querySelector("#podcastPlayer").hidden = true;
+    setPodcastExpanded(false);
+    (document.querySelector("[data-podcast-open]") || document.querySelector('.bottom-nav [data-route="manifesti"]'))?.focus();
+    return;
+  }
+  if (event.target.closest("[data-check-edit]")) {
+    const form = document.querySelector("#voiceCheckIn");
+    form.hidden = false;
+    document.querySelector("[data-check-complete]").hidden = true;
+    form.querySelector("[data-voice-word]")?.focus();
+    return;
+  }
   const moreWordsButton = event.target.closest("[data-more-voice-words]");
   if (moreWordsButton) {
     const form = moreWordsButton.closest("form");
@@ -969,7 +1073,7 @@ document.addEventListener("submit", event => {
 
   if (!words.length && !note) {
     status.textContent = "Scegli almeno una parola oppure scrivi come la senti.";
-    form.elements.voiceOwnWords.focus();
+    form.querySelector("[data-voice-word]")?.focus();
     return;
   }
 
@@ -977,6 +1081,7 @@ document.addEventListener("submit", event => {
     date: localDayKey(),
     words,
     note,
+    intent: voiceIntent({ intent: form.elements.voiceIntent?.value }),
     updatedAt: new Date().toISOString()
   };
   const saved = saveVoiceEntry(entry);
@@ -984,9 +1089,14 @@ document.addEventListener("submit", event => {
   document.querySelector("#voiceReflection").innerHTML = voiceReflectionMarkup(entry);
   document.querySelector("#voiceDiary").innerHTML = voiceDiaryMarkup();
   form.querySelector(".check-submit").innerHTML = "Aggiorna il mio ascolto <span aria-hidden=\"true\">→</span>";
+  if (saved) {
+    form.hidden = true;
+    document.querySelector("[data-check-complete]").hidden = false;
+  }
   status.textContent = saved
     ? "Il tuo ascolto di oggi è nel diario."
-    : "Lo specchio è pronto, ma il diario non può essere conservato in questo browser.";
+    : "La proposta è pronta, ma il diario non può essere conservato in questo browser.";
+  document.querySelector("#voiceReflection .voice-reflection")?.focus({ preventScroll: true });
   document.querySelector("#voiceReflection").scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
