@@ -1,6 +1,34 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const numberPattern = /\bmanifest[oi](?:\s+delle\s+voci\s+libere)?\s*(?:n[.°º]?\s*)?#?\s*(\d{1,3})\b/i;
+const retryableStatuses = new Set([408, 425, 429, 500, 502, 503, 504]);
+const delay = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+
+export async function fetchWithRetry(url, {
+  attempts = 4,
+  baseDelayMs = 750,
+  fetchPage = fetch,
+  sleep = delay,
+  timeoutMs = 30000,
+  ...options
+} = {}) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      const response = await fetchPage(url, {...options, signal:AbortSignal.timeout(timeoutMs)});
+      if (!retryableStatuses.has(response.status) || attempt === attempts) return response;
+      lastError = new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts) throw error;
+    }
+    const waitMs = baseDelayMs * 2 ** (attempt - 1);
+    const reason = lastError?.cause?.code || lastError?.message || 'errore temporaneo';
+    console.warn(`Richiesta non riuscita (${reason}). Nuovo tentativo ${attempt + 1}/${attempts} tra ${waitMs} ms.`);
+    await sleep(waitMs);
+  }
+  throw lastError;
+}
 
 export function manifestoNumber(campaign, email) {
   const combined = `${email.subject || ''} ${campaign.name || ''}`;
@@ -40,7 +68,7 @@ export async function readBody(email, previewUrl, fetchPage = fetch) {
   }
   const url = new URL(previewUrl || 'https://invalid.invalid');
   if (url.protocol !== 'https:' || !['preview.mailerlite.io','preview.mailerlite.com'].includes(url.hostname)) throw new Error('Anteprima della newsletter non disponibile.');
-  const response = await fetchPage(url, {signal:AbortSignal.timeout(30000)});
+  const response = await fetchWithRetry(url, {fetchPage});
   if (!response.ok) throw new Error(`Anteprima newsletter non disponibile (${response.status}).`);
   const body = htmlToText(await response.text());
   if (!usableBody(body) || /^(?:access denied|just a moment|verify you are human|sign in|login)\b/i.test(body)) throw new Error('La newsletter non contiene un testo completo leggibile.');

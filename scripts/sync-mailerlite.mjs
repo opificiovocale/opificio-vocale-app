@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { manifestoNumber, campaignEmail, readBody, mergeManifesto } from './manifesti-import.mjs';
+import { manifestoNumber, campaignEmail, fetchWithRetry, readBody, mergeManifesto } from './manifesti-import.mjs';
 
 const token = process.env.MAILERLITE_API_TOKEN?.trim();
 const dataPath = process.env.MANIFESTI_DATA_PATH || fileURLToPath(new URL('../manifesti.json', import.meta.url));
@@ -9,8 +9,8 @@ if (!token) throw new Error('Sincronizzazione non attiva: configura MAILERLITE_A
 const campaigns = [];
 let page = 1;
 while (true) {
-  const response = await fetch(`https://connect.mailerlite.com/api/campaigns?filter%5Bstatus%5D=sent&limit=100&page=${page}`, {
-    headers:{Accept:'application/json',Authorization:`Bearer ${token}`}, signal:AbortSignal.timeout(30000)
+  const response = await fetchWithRetry(`https://connect.mailerlite.com/api/campaigns?filter%5Bstatus%5D=sent&limit=100&page=${page}`, {
+    headers:{Accept:'application/json',Authorization:`Bearer ${token}`}
   });
   if (!response.ok) throw new Error(`MailerLite ha risposto ${response.status}. Verifica il collegamento e riprova.`);
   const payload = await response.json();

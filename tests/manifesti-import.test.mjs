@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { manifestoNumber, cleanTitle, usableBody, htmlToText, readBody, mergeManifesto } from '../scripts/manifesti-import.mjs';
+import { manifestoNumber, cleanTitle, usableBody, htmlToText, fetchWithRetry, readBody, mergeManifesto } from '../scripts/manifesti-import.mjs';
 
 const text = 'La voce porta con sé le abitudini che abbiamo imparato. Possiamo fermarci ad ascoltarla, riconoscere quello che sentiamo e scegliere come darle spazio nella vita quotidiana.';
 const italianFallback = 'Ciao,\n\nIl software che usi per leggere le e-mail non supporta il formato html. Puoi visualizzare il tuo messaggio cliccando qui:\n\nNon ti interessa più? Clicca qui per cancellarti:';
@@ -45,6 +45,33 @@ test('Anteprime mancanti o non leggibili fermano l’importazione', async () => 
   await assert.rejects(readBody({},'https://example.org/private'),/Anteprima/);
   await assert.rejects(readBody({},email.preview_url,async () => ({ok:false,status:404})),/404/);
   await assert.rejects(readBody({},email.preview_url,async () => ({ok:true,text:async () => '<p>Sign in</p>'})),/testo completo/);
+});
+
+test('Riprova gli errori di rete temporanei e poi prosegue', async () => {
+  let calls = 0;
+  const waits = [];
+  const response = await fetchWithRetry('https://connect.mailerlite.com/api/campaigns', {
+    baseDelayMs:10,
+    sleep:async milliseconds => waits.push(milliseconds),
+    fetchPage:async () => {
+      calls++;
+      if (calls < 3) throw new TypeError('fetch failed', {cause:{code:'ECONNRESET'}});
+      return {ok:true,status:200};
+    }
+  });
+  assert.equal(response.status,200);
+  assert.equal(calls,3);
+  assert.deepEqual(waits,[10,20]);
+});
+
+test('Non riprova gli errori definitivi come credenziali non valide', async () => {
+  let calls = 0;
+  const response = await fetchWithRetry('https://connect.mailerlite.com/api/campaigns', {
+    sleep:() => assert.fail('Non deve attendere'),
+    fetchPage:async () => ({ok:false,status:(calls++,401)})
+  });
+  assert.equal(response.status,401);
+  assert.equal(calls,1);
 });
 
 test('Aggiorna il Manifesto 1 esistente senza duplicarlo e non importa le bozze', () => {

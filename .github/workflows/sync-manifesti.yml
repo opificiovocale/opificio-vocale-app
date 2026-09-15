@@ -23,12 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Scarica il progetto
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Prepara Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
+
+      - name: Verifica il progetto
+        run: node --test tests/*.test.*
 
       - name: Leggi le campagne inviate
         env:
