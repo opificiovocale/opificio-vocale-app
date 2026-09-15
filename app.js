@@ -32,6 +32,11 @@ let voiceWordPage = 0;
 const VOICE_DIARY_KEY = "opificio-voice-diary-v1";
 const VOICE_INTENTS = { listen: "Ascoltarmi", explore: "Esplorare", note: "Lasciare una traccia" };
 const voiceIntent = entry => Object.hasOwn(VOICE_INTENTS, entry.intent) ? entry.intent : "listen";
+const VOICE_INTENT_DESCRIPTIONS = {
+  listen: "Uno spunto per osservare come la senti, senza produrre voce.",
+  explore: "Una piccola proposta da provare, a partire dalle parole che hai scelto.",
+  note: "Conserva parole e pensieri nel diario. Nessun esercizio, nessun timer."
+};
 
 const REFLECTIONS = {
   gentle: [
@@ -157,6 +162,17 @@ const LISTENING_PROMPTS = {
   open: ["Ripensa a un momento di oggi in cui parlare ti è sembrato facile. Con chi eri?", "Che cosa ti va di dire oggi? Scegli una frase mentalmente, senza doverla provare."],
   mixed: ["Lascia vicine le parole che hai scelto, anche se sembrano opposte. Quale descrive meglio questo preciso momento?", "Pensa a due momenti diversi della giornata. Le parole che hai scelto appartengono allo stesso momento o a situazioni diverse?"],
   unknown: ["Ascolta i suoni intorno a te per qualche istante. Non devi trovare una parola per la tua voce.", "Nota come stai entrando in questo momento: con curiosità, fretta o altro. Puoi lasciare la domanda aperta."]
+};
+
+const LISTENING_REFLECTIONS = {
+  tired: { title: "Prima di chiedere altro.", copy: "Hai nominato la stanchezza. Per questo momento puoi ascoltarla senza aggiungere un compito." },
+  tense: { title: "Osserva, senza aggiustare.", copy: "Hai scelto una parola di tensione. Non devi scioglierla adesso: puoi fermarti a notare come stai." },
+  held: { title: "In quale situazione la senti così?", copy: "Una voce trattenuta o lontana può essere difficile da raccontare. Puoi partire dal contesto, senza doverla far uscire." },
+  fragile: { title: "Puoi ascoltarla con delicatezza.", copy: "Fragilità e incertezza possono avere spazio senza diventare una prova da superare. Non serve produrre suono." },
+  gentle: { title: "Com’è, senza cambiarla.", copy: "Le parole che hai scelto possono restare qui. Per questo momento non ti chiedo di usare la voce: soltanto di darle attenzione." },
+  open: { title: "Che cosa rende facile parlare?", copy: "Hai scelto parole di disponibilità. Puoi riconoscere questa sensazione senza doverla trasformare in un esercizio." },
+  mixed: { title: "Ascolta le diverse sfumature.", copy: "Le parole che hai scelto possono stare insieme. Non devi renderle coerenti né provarle con la voce." },
+  unknown: { title: "Puoi non saperlo, per ora.", copy: "Non serve una definizione per cominciare ad ascoltarti. Questa volta puoi restare senza parole e senza suono." }
 };
 
 const escapeHTML = value => String(value).replace(/[&<>'"]/g, character => ({
@@ -439,19 +455,24 @@ function reflectionType(entry) {
 }
 
 function reflectionFor(entry, type) {
-  const options = REFLECTIONS[type];
+  const intent = voiceIntent(entry);
+  if (intent === "note") return {
+    title: "Può bastare questo.",
+    copy: "Hai dato spazio a come la senti oggi. Non c'è un esercizio da fare: puoi fermarti qui.",
+    practice: null
+  };
+  const options = intent === "listen" ? LISTENING_PROMPTS[type] : REFLECTIONS[type];
   const fingerprint = [entry.date, ...[...entry.words].sort()].join("|");
   const index = [...fingerprint].reduce((total, character) => total + character.charCodeAt(0), 0) % options.length;
-  return options[index];
+  return intent === "listen"
+    ? { ...LISTENING_REFLECTIONS[type], practice: options[index] }
+    : options[index];
 }
 
 function voiceReflectionMarkup(entry) {
   const type = reflectionType(entry);
   const reflection = reflectionFor(entry, type);
   const intent = voiceIntent(entry);
-  const listening = LISTENING_PROMPTS[type];
-  const day = Number(entry.date.replace(/-/g, "")) || 0;
-  const practice = intent === "listen" ? listening[day % listening.length] : reflection.practice;
   const words = entry.words.length
     ? `<p class="chosen-words">${entry.words.map(escapeHTML).join(" · ")}</p>`
     : "";
@@ -460,23 +481,25 @@ function voiceReflectionMarkup(entry) {
     : "";
 
   return `
-    <section class="voice-reflection ${type}" tabindex="-1" aria-labelledby="reflection-title">
-      <p class="content-kicker"><span>${intent === "note" ? "La tua traccia" : "La proposta di oggi"}</span></p>
-      <h3 id="reflection-title">${intent === "note" ? "Può bastare questo." : reflection.title}</h3>
+    <section class="voice-reflection ${type}" data-voice-intent="${intent}" tabindex="-1" aria-labelledby="reflection-title">
+      <p class="content-kicker"><span>${intent === "note" ? "La tua traccia" : intent === "listen" ? "Ascoltarmi · senza voce" : "Esplorare · una piccola prova"}</span></p>
+      <h3 id="reflection-title">${reflection.title}</h3>
       ${words}${ownWords}
-      <p class="reflection-copy">${intent === "note" ? "Hai dato spazio a come la senti oggi. Non c'è un esercizio da fare: puoi fermarti qui." : reflection.copy}</p>
+      <p class="reflection-copy">${reflection.copy}</p>
       ${intent === "note" ? "" : `
+      <div class="micro-practice" data-reflection-practice>
+        <p>${reflection.practice}</p>
+      </div>
       <button class="outline-button" type="button" data-practice-toggle aria-expanded="false">
-        ${intent === "listen" ? "Un minuto di ascolto, senza voce" : "Esplora la proposta"} <span aria-hidden="true">＋</span>
+        Apri il timer di un minuto <span aria-hidden="true">＋</span>
       </button>
-      <div class="micro-practice" hidden>
-        <p>${practice}</p>
+      <div class="practice-timer" hidden>
         <button class="minute-button" type="button" data-minute-start>
           Avvia il minuto <span data-minute-label>1:00</span>
         </button>
         <p class="minute-status" data-minute-status aria-live="polite"></p>
       </div>`}
-      <p class="proposal-note">Uno spunto generale, non una valutazione della tua voce. Puoi fermarti o saltarlo in qualsiasi momento.</p>
+      <p class="proposal-note">${intent === "note" ? "Questa traccia resta su questo dispositivo. Puoi modificarla quando vuoi." : "Uno spunto generale, non una valutazione della tua voce. Puoi fermarti o saltarlo in qualsiasi momento."}</p>
     </section>`;
 }
 
@@ -542,7 +565,9 @@ function voiceCheckInMarkup() {
       </div>
       <div class="check-complete" data-check-complete ${today ? "" : "hidden"}>
         <p>Il tuo ascolto di oggi è qui.</p>
-        <button class="text-link" type="button" data-check-edit>Modifica le parole o la proposta</button>
+        <button class="check-edit-button" type="button" data-check-edit aria-controls="voiceCheckIn">
+          <span>Modifica le parole o la proposta</span><span class="check-edit-icon" aria-hidden="true">↺</span>
+        </button>
       </div>
       <form class="voice-check-card" id="voiceCheckIn" novalidate ${today ? "hidden" : ""}>
         <fieldset>
@@ -560,10 +585,11 @@ function voiceCheckInMarkup() {
         <textarea id="voiceOwnWords" name="voiceOwnWords" maxlength="140" rows="3" placeholder="Per esempio: impastata, lontana, pronta a uscire…">${escapeHTML(today?.note || "")}</textarea>
         <p class="proposal-note">Le note restano nel tuo diario: non vengono interpretate per scegliere una proposta.</p>
         </details>
-        <fieldset class="voice-intents">
+        <fieldset class="voice-intents" aria-describedby="voiceIntentDescription">
           <legend>Oggi mi va di…</legend>
           ${Object.entries(VOICE_INTENTS).map(([value, label]) => `<label><input type="radio" name="voiceIntent" value="${value}" ${voiceIntent(today || {}) === value ? "checked" : ""}><span>${label}</span></label>`).join("")}
         </fieldset>
+        <p class="intent-description" id="voiceIntentDescription" data-intent-description aria-live="polite">${VOICE_INTENT_DESCRIPTIONS[voiceIntent(today || {})]}</p>
         <p class="selection-status" data-selection-status aria-live="polite">${selected.size ? `${selected.size} ${selected.size === 1 ? "parola scelta" : "parole scelte"}` : "Puoi scegliere fino a 3 parole."}</p>
         <button class="primary-button check-submit" type="submit">
           ${today ? "Aggiorna il mio ascolto" : "Continua"} <span aria-hidden="true">→</span>
@@ -932,6 +958,8 @@ document.addEventListener("click", event => {
     const form = document.querySelector("#voiceCheckIn");
     form.hidden = false;
     document.querySelector("[data-check-complete]").hidden = true;
+    document.querySelector("#voiceReflection").hidden = true;
+    window.clearInterval(minuteInterval);
     form.querySelector("[data-voice-word]")?.focus();
     return;
   }
@@ -1062,6 +1090,15 @@ document.addEventListener("click", event => {
   else location.hash = route;
 });
 
+document.addEventListener("change", event => {
+  if (event.target.name !== "voiceIntent") return;
+  const form = event.target.closest("#voiceCheckIn");
+  if (!form) return;
+  const intent = voiceIntent({ intent: event.target.value });
+  form.querySelector("[data-intent-description]").textContent = VOICE_INTENT_DESCRIPTIONS[intent];
+  form.querySelector("[data-selection-status]").textContent = "Conferma con il pulsante qui sotto per vedere la risposta.";
+});
+
 document.addEventListener("submit", event => {
   if (event.target.id !== "voiceCheckIn") return;
   event.preventDefault();
@@ -1087,6 +1124,7 @@ document.addEventListener("submit", event => {
   const saved = saveVoiceEntry(entry);
   window.clearInterval(minuteInterval);
   document.querySelector("#voiceReflection").innerHTML = voiceReflectionMarkup(entry);
+  document.querySelector("#voiceReflection").hidden = false;
   document.querySelector("#voiceDiary").innerHTML = voiceDiaryMarkup();
   form.querySelector(".check-submit").innerHTML = "Aggiorna il mio ascolto <span aria-hidden=\"true\">→</span>";
   if (saved) {

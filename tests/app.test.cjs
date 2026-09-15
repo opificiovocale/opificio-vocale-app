@@ -170,6 +170,64 @@ test('Ogni parola e intenzione produce una restituzione completa', () => {
   assert.equal(app.run('Object.values(REFLECTIONS).flat().length'), 28);
 });
 
+test('Con impastata e ruvida le tre intenzioni cambiano titolo, testo e proposta visibile', () => {
+  const app = boot();
+  const responses = ['listen','explore','note'].map(intent => app.run(`voiceReflectionMarkup({date:'2026-09-15',words:['impastata','ruvida'],note:'',intent:'${intent}'})`));
+  const titles = responses.map(html => html.match(/<h3 id="reflection-title">([^<]+)<\/h3>/)[1]);
+  const copies = responses.map(html => html.match(/<p class="reflection-copy">([^<]+)<\/p>/)[1]);
+  assert.equal(new Set(titles).size, 3);
+  assert.equal(new Set(copies).size, 3);
+  assert.match(responses[0], /data-voice-intent="listen"/);
+  assert.match(responses[0], /silenzio|senza produrre voce/);
+  assert.match(responses[1], /data-voice-intent="explore"/);
+  assert.match(responses[1], /Scegli una frase quotidiana/);
+  for (const html of responses.slice(0,2)) {
+    assert.match(html, /<div class="micro-practice" data-reflection-practice>/);
+    assert.doesNotMatch(html, /<div class="micro-practice"[^>]*hidden/);
+  }
+  assert.doesNotMatch(responses[2], /data-reflection-practice|data-minute-start|data-practice-toggle/);
+});
+
+test('Tutte le parole distinguono ascolto, esplorazione e sola traccia', () => {
+  const app = boot();
+  assert.equal(app.run(`VOICE_WORDS.every(word => {
+    const entry = {date:'2026-09-15',words:[word],note:''};
+    const results = Object.keys(VOICE_INTENTS).map(intent => reflectionFor({...entry,intent},reflectionType(entry)));
+    return new Set(results.map(result => result.title)).size === 3 &&
+      new Set(results.map(result => result.copy)).size === 3 &&
+      results[0].practice !== results[1].practice && results[2].practice === null;
+  })`), true);
+});
+
+test('La descrizione cambia subito selezionando un’intenzione, senza salvare il diario', () => {
+  const app = boot();
+  const description = {}, status = {};
+  const form = {querySelector:selector => selector === '[data-intent-description]' ? description : status};
+  for (const [value, expected] of [['listen',/senza produrre voce/],['explore',/proposta da provare/],['note',/Nessun esercizio, nessun timer/]]) {
+    app.events.change({target:{name:'voiceIntent',value,closest:selector => selector === '#voiceCheckIn' ? form : null}});
+    assert.match(description.textContent,expected);
+    assert.match(status.textContent,/Conferma/);
+  }
+  assert.equal(app.run('loadVoiceDiary().length'),0);
+});
+
+test('Il riepilogo offre un pulsante di modifica riconoscibile e collegato al modulo', () => {
+  const app = boot('', [{date:'2026-09-04',words:['impastata','ruvida'],note:'',intent:'listen'}]);
+  assert.match(app.app.innerHTML, /class="check-edit-button"[^>]*data-check-edit[^>]*aria-controls="voiceCheckIn"/);
+  assert.match(app.app.innerHTML, /Modifica le parole o la proposta/);
+  assert.match(app.app.innerHTML, /class="check-edit-icon" aria-hidden="true"/);
+});
+
+test('Le versioni di codice e stile coincidono con quelle precache del service worker', () => {
+  const shell = readFileSync(path.join(__dirname,'../index.html'),'utf8');
+  const worker = readFileSync(path.join(__dirname,'../sw.js'),'utf8');
+  const version = worker.match(/const CACHE = "opificio-vocale-v(\d+)"/)[1];
+  for (const asset of ['app.js','styles.css']) {
+    assert.ok(shell.includes(`./${asset}?v=${version}`));
+    assert.ok(worker.includes(`./${asset}?v=${version}`));
+  }
+});
+
 test('Le nuove intenzioni preservano il diario precedente', () => {
   const app = boot('', [{date:'2026-09-04',words:['curiosa'],note:'Conservami'}]);
   assert.equal(app.run('loadVoiceDiary()[0].intent'), 'listen');
@@ -273,8 +331,16 @@ test('Il modulo salva l’intenzione, si compatta e si riapre senza perdere la n
   assert.doesNotMatch(reflection.innerHTML,/data-minute-start/);
   app.events.click({target:{closest:s=>s === '[data-check-edit]' ? {} : null}});
   assert.equal(form.hidden,false);
+  assert.equal(reflection.hidden,true);
   assert.equal(focused,true);
   assert.equal(form.elements.voiceOwnWords.value,'Una nota di prova');
+  form.elements.voiceIntent.value = 'explore';
+  app.events.submit({target:form,preventDefault(){}});
+  assert.equal(reflection.hidden,false);
+  assert.match(reflection.innerHTML,/data-voice-intent="explore"/);
+  assert.equal(app.run('loadVoiceDiary().length'),1);
+  assert.equal(app.run('loadVoiceDiary()[0].intent'),'explore');
+  assert.equal(app.run('loadVoiceDiary()[0].note'),'Una nota di prova');
 });
 
 test('Una risposta vuota resta correggibile senza salvare una traccia', () => {

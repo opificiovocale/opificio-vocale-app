@@ -5,7 +5,7 @@ Web app pubblica di Opificio Vocale.
 ## Contenuti
 
 - Home compatta con foto reale, check-in quotidiano “Oggi la tua voce come sta?” e riepilogo modificabile dopo il salvataggio
-- Check-in: 31 parole, 28 restituzioni in 8 gruppi e tre intenzioni (ascoltarmi, esplorare, lasciare una traccia). L’ascolto propone osservazioni senza produrre voce; la sola traccia non propone esercizi. Le note libere non vengono interpretate e non influenzano la scelta della proposta
+- Check-in: 31 parole e tre intenzioni con titoli, testi e proposte distinti fin dalla risposta visibile. Ascoltarmi offre 16 spunti senza produrre voce in 8 gruppi; Esplorare usa 28 proposte; Lasciare una traccia conserva il diario senza esercizi né timer. Le note libere non vengono interpretate e non influenzano la scelta della proposta. La descrizione dell’intenzione cambia subito; il pulsante finale conferma e salva la scelta. Il riepilogo ha un pulsante di modifica in evidenza
 - Manifesti: lettore Spotify persistente e riducibile, ultimo testo in evidenza e archivio completo leggibile nell’app. Il lettore viene caricato su richiesta; cambiare sezione non ricrea l’iframe, mentre “Chiudi” interrompe l’ascolto. La riproduzione effettiva resta soggetta alle condizioni e alla disponibilità del servizio Spotify
 - Audioteca: accessi distinti all’area generale e alle esperienze gratuite
 - Percorsi: ingresso dedicato all’affermazione vocale, Check Vocale, Reset Vocale, Vocal Boom e Vocal Hit

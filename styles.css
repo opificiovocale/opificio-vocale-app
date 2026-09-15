@@ -368,6 +368,8 @@ summary:focus-visible {
   line-height: 1.45;
 }
 
+.practice-timer { margin-top: 16px; }
+
 .minute-button {
   border: 0;
   background: var(--ink);
@@ -1112,8 +1114,37 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 /* Identità e componenti editoriali · v7 */
 .check-intro .eyebrow { display: none; }
 .check-complete { padding: 4px 5px 8px; }
-.check-complete p { margin: 0 0 8px; font-size: 16px; }
-.check-complete button { border: 0; padding: 10px 0; background: transparent; cursor: pointer; font-size: 14px; }
+.check-complete p { margin: 0 0 14px; font-size: 16px; }
+.check-edit-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 56px;
+  padding: 14px 16px;
+  border: 1px solid var(--teal);
+  border-radius: 16px;
+  background: var(--teal);
+  color: var(--paper);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+.check-edit-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(251, 247, 239, .14);
+  font-size: 22px;
+  font-weight: 400;
+}
+.check-edit-button:active { background: var(--teal-soft); }
 .own-words-details { margin: 0 0 20px; }
 .own-words-details summary { min-height: 44px; padding: 10px 0; cursor: pointer; font-size: 14px; }
 .own-words-details[open] summary { margin-bottom: 10px; }
@@ -1126,6 +1157,7 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 .voice-intents label:has(input:checked) { background: #e2e9de; border-color: var(--teal); }
 .voice-intents input { margin: 0; accent-color: var(--teal); width: 16px; height: 16px; }
 .voice-intents input:focus-visible { outline: 3px solid var(--mustard); outline-offset: 3px; }
+.intent-description { margin: 0 0 16px; color: var(--teal); font-size: 13px; line-height: 1.5; }
 .selection-status, .privacy-note, .voice-more { font-size: 12px; }
 .voice-more { min-height: 44px; }
 .home-section-card small, .audio-portal small, .route-card small, .archive-copy small { font-size: 11px; line-height: 1.5; letter-spacing: .06em; }
