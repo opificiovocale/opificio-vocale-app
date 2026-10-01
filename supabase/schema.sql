@@ -348,7 +348,10 @@ alter table public.lessons
   add constraint lessons_package_student_fkey
   foreign key (package_id, student_id)
   references public.packages(id, student_id)
-  on delete set null;
+  on delete restrict;
+
+create index if not exists lessons_package_student_idx
+  on public.lessons(package_id, student_id);
 
 create or replace function public.create_studio_lesson(
   p_student_id uuid,
