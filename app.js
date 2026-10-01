@@ -634,9 +634,181 @@ const pages = {
             <span><small>Voce parlata e cantata</small><strong>Percorsi</strong></span>
             <span aria-hidden="true">→</span>
           </button>
+          <button class="home-section-card studio-card" type="button" data-route="studio">
+            <span class="section-mark" aria-hidden="true">⌁</span>
+            <span><small>Area riservata · prototipo</small><strong>Studio</strong></span>
+            <span aria-hidden="true">→</span>
+          </button>
         </div>
       </section>
       <div class="brand-strip">Voce cantata · Voce parlata · Identità · Espressione</div>
+    </section>`,
+
+
+  studio: () => `
+    <section class="page studio-page" aria-labelledby="studio-title">
+      <header class="studio-hero">
+        <button class="back-button" type="button" data-route="home"><span aria-hidden="true">←</span> Home</button>
+        <p class="eyebrow">Area riservata · Prototipo V1</p>
+        <h1 id="studio-title">Studio.</h1>
+        <p class="lead">Il tuo spazio di lavoro: lezioni, percorsi, materiali e memoria didattica.</p>
+        <p class="studio-prototype-note">Dati demo · nessun salvataggio attivo in questo prototipo.</p>
+      </header>
+
+      <section class="studio-section" aria-labelledby="studio-today">
+        <div class="studio-section-heading">
+          <div>
+            <p class="content-kicker"><span>Oggi</span> · Agenda</p>
+            <h2 id="studio-today">Lezioni di oggi.</h2>
+          </div>
+          <span class="studio-count">0</span>
+        </div>
+        <div class="studio-empty">
+          <p>Nessuna lezione caricata nel prototipo.</p>
+          <button class="primary-button" type="button" data-route="studio-lezione">Nuova lezione <span aria-hidden="true">→</span></button>
+        </div>
+      </section>
+
+      <section class="studio-section studio-actions" aria-labelledby="studio-actions-title">
+        <p class="content-kicker"><span>Accessi rapidi</span></p>
+        <h2 id="studio-actions-title">Tutto a portata di mano.</h2>
+        <div class="studio-action-grid">
+          <button class="studio-action-card" type="button" data-route="studio-lezione">
+            <span aria-hidden="true">＋</span><strong>Nuova lezione</strong><small>Registra un incontro in pochi passaggi.</small>
+          </button>
+          <button class="studio-action-card" type="button" data-route="studio-allievi">
+            <span aria-hidden="true">◎</span><strong>Allievi</strong><small>Apri percorsi e storico.</small>
+          </button>
+          <button class="studio-action-card" type="button" data-route="percorso">
+            <span aria-hidden="true">↗</span><strong>Vista allievo</strong><small>Anteprima di “Il mio percorso”.</small>
+          </button>
+        </div>
+      </section>
+    </section>`,
+
+  "studio-allievi": () => `
+    <section class="page studio-page" aria-labelledby="students-title">
+      <header class="studio-compact-header">
+        <button class="back-button" type="button" data-route="studio"><span aria-hidden="true">←</span> Studio</button>
+        <p class="eyebrow">Studio · Allievi</p>
+        <h1 id="students-title">Allievi.</h1>
+        <p class="studio-prototype-note">Dati demo · nessun dato personale reale.</p>
+      </header>
+      <section class="studio-list">
+        <button class="student-row" type="button" data-route="studio-allievo">
+          <span class="student-avatar" aria-hidden="true">AD</span>
+          <span><small>Vocal Boom · 3/4</small><strong>Allievo demo</strong><em>Ultima lezione: 24 settembre</em></span>
+          <span class="arrow" aria-hidden="true">→</span>
+        </button>
+        <button class="primary-button studio-full-button" type="button" data-route="studio-lezione">＋ Nuova lezione</button>
+      </section>
+    </section>`,
+
+  "studio-allievo": () => `
+    <section class="page studio-page" aria-labelledby="student-title">
+      <header class="studio-compact-header">
+        <button class="back-button" type="button" data-route="studio-allievi"><span aria-hidden="true">←</span> Allievi</button>
+        <p class="eyebrow">Scheda allievo · Demo</p>
+        <h1 id="student-title">Allievo demo.</h1>
+        <p class="studio-prototype-note">Contenuto fittizio per valutare l’interfaccia.</p>
+      </header>
+
+      <section class="studio-summary-grid" aria-label="Riepilogo percorso">
+        <article class="studio-stat"><small>Percorso</small><strong>Vocal Boom</strong><span>3 di 4 incontri</span></article>
+        <article class="studio-stat"><small>Residue</small><strong>1</strong><span>lezione</span></article>
+        <article class="studio-stat"><small>Prossima</small><strong>—</strong><span>da fissare</span></article>
+      </section>
+
+      <section class="studio-section">
+        <p class="content-kicker"><span>Ultima lezione</span> · 24 settembre</p>
+        <h2>Intenzione e dinamiche.</h2>
+        <div class="lesson-preview">
+          <p><strong>Riepilogo condivisibile</strong><br>Testo demo: lavoro su intenzione, ritmo e libertà del gesto vocale.</p>
+          <div class="lesson-link-grid">
+            <button type="button" disabled>▶ Registrazione</button>
+            <button type="button" disabled>▤ Trascrizione</button>
+            <button type="button" disabled>＋ Materiali</button>
+          </div>
+          <div class="private-note"><small>Solo per te</small><strong>Nota privata docente</strong><p>Questa area non comparirà mai nella vista dell’allievo.</p></div>
+        </div>
+      </section>
+
+      <section class="studio-section">
+        <p class="content-kicker"><span>Storico</span></p>
+        <h2>Lezioni.</h2>
+        <div class="lesson-history">
+          <button type="button" data-route="studio-lezione"><time>24 SET</time><span><strong>Intenzione e dinamiche</strong><small>Presente · 60 min</small></span><span>→</span></button>
+          <button type="button" data-route="studio-lezione"><time>17 SET</time><span><strong>Ritmo e articolazione</strong><small>Presente · 60 min</small></span><span>→</span></button>
+        </div>
+      </section>
+    </section>`,
+
+  "studio-lezione": () => `
+    <section class="page studio-page" aria-labelledby="lesson-form-title">
+      <header class="studio-compact-header">
+        <button class="back-button" type="button" data-route="studio"><span aria-hidden="true">←</span> Studio</button>
+        <p class="eyebrow">Studio · Lezione</p>
+        <h1 id="lesson-form-title">Nuova lezione.</h1>
+        <p class="studio-prototype-note">Form dimostrativo: il salvataggio verrà collegato al database.</p>
+      </header>
+
+      <form class="studio-form" aria-label="Nuova lezione">
+        <label><span>Allievo</span><select><option>Allievo demo</option></select></label>
+        <div class="studio-form-row">
+          <label><span>Data</span><input type="date" value="2026-10-01"></label>
+          <label><span>Durata</span><select><option>60 min</option><option>45 min</option><option>50 min</option></select></label>
+        </div>
+        <label><span>Stato</span><select><option>Presente</option><option>Assente</option><option>Recupero</option><option>Annullata</option></select></label>
+        <label><span>Focus / argomenti</span><input type="text" placeholder="Es. ritmo, articolazione, dinamiche"></label>
+        <label class="private-field"><span>Note private · solo docente</span><textarea rows="4" placeholder="Osservazioni che non saranno mai visibili all’allievo."></textarea></label>
+        <label><span>Riepilogo per l’allievo</span><textarea rows="4" placeholder="Che cosa abbiamo esplorato oggi?"></textarea></label>
+        <label><span>Da fare / esercizi</span><textarea rows="3" placeholder="Indicazioni per il prossimo incontro."></textarea></label>
+        <label><span>Registrazione Drive</span><input type="url" placeholder="https://drive.google.com/..."></label>
+        <label><span>Trascrizione</span><input type="url" placeholder="https://drive.google.com/..."></label>
+        <label><span>Materiali</span><input type="url" placeholder="https://drive.google.com/..."></label>
+        <label class="studio-check"><input type="checkbox" checked><span>Rendi visibile il riepilogo all’allievo</span></label>
+        <button class="primary-button" type="button" disabled>Salva lezione · database da collegare</button>
+      </form>
+    </section>`,
+
+  percorso: () => `
+    <section class="page student-path-page" aria-labelledby="path-title">
+      <header class="student-path-hero">
+        <button class="back-button" type="button" data-route="studio"><span aria-hidden="true">←</span> Studio</button>
+        <p class="eyebrow">Il tuo spazio in Opificio Vocale · Demo</p>
+        <h1 id="path-title">Il mio<br>percorso.</h1>
+        <p>Un posto solo per ritrovare ciò che stai esplorando.</p>
+      </header>
+
+      <section class="path-stack">
+        <article class="path-card path-next">
+          <small>Prossima lezione</small><strong>Da fissare</strong><p>Quando sarà collegato il calendario, comparirà qui.</p>
+        </article>
+        <article class="path-card">
+          <small>Percorso attivo</small><strong>Vocal Boom</strong><p>3 di 4 incontri utilizzati · 1 incontro rimanente</p>
+        </article>
+        <article class="path-card">
+          <small>Ultima lezione · 24 settembre</small><strong>Intenzione e dinamiche</strong>
+          <p>Abbiamo esplorato come spostare il controllo dal suono al gesto, al ritmo e all’intenzione.</p>
+          <div class="path-links">
+            <button type="button" disabled>▶ Rivedi lezione</button>
+            <button type="button" disabled>▤ Trascrizione</button>
+            <button type="button" disabled>＋ Materiali</button>
+          </div>
+        </article>
+        <article class="path-card">
+          <small>Da fare</small><strong>Per il prossimo incontro</strong><p>Riprendi la frase scelta e prova tre ritmi diversi senza cercare di correggere il suono.</p>
+        </article>
+      </section>
+
+      <section class="studio-section">
+        <p class="content-kicker"><span>Storico</span></p>
+        <h2>Le mie lezioni.</h2>
+        <div class="lesson-history">
+          <button type="button" disabled><time>24 SET</time><span><strong>Intenzione e dinamiche</strong><small>Riepilogo disponibile</small></span><span>→</span></button>
+          <button type="button" disabled><time>17 SET</time><span><strong>Ritmo e articolazione</strong><small>Riepilogo disponibile</small></span><span>→</span></button>
+        </div>
+      </section>
     </section>`,
 
   manifesti: () => `
@@ -925,7 +1097,12 @@ function render({ focus = false } = {}) {
     manifesti: "Manifesti · Opificio Vocale",
     "manifesto-1": "La voce che hai imparato · Opificio Vocale",
     audioteca: "Audioteca · Opificio Vocale",
-    percorsi: "Percorsi · Opificio Vocale"
+    percorsi: "Percorsi · Opificio Vocale",
+    studio: "Studio · Opificio Vocale",
+    "studio-allievi": "Allievi · Studio · Opificio Vocale",
+    "studio-allievo": "Scheda allievo · Studio · Opificio Vocale",
+    "studio-lezione": "Nuova lezione · Studio · Opificio Vocale",
+    percorso: "Il mio percorso · Opificio Vocale"
   };
   document.title = titles[route] || `${importedManifesto?.title || "Manifesti"} · Opificio Vocale`;
   const activeRoute = route.startsWith("manifesto-") ? "manifesti" : route;
