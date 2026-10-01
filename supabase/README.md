@@ -10,11 +10,11 @@ Backend per l'area privata di Opificio Vocale.
 - Schema applicato e verificato
 - RLS attiva su tutte le tabelle esposte
 - Security Advisor: nessun warning
-- Login e collegamento dell'interfaccia ancora da attivare
+- Login magic-link e collegamento dell'interfaccia implementati nel branch
 
 ## Attivazione nell'app
 
-1. Configurare in **Authentication → URL Configuration** l'URL pubblico dell'app e gli eventuali redirect consentiti.
+1. In **Authentication → URL Configuration** impostare il Site URL su `https://app.opificiovocale.it/` e aggiungere `https://app.opificiovocale.it/**` tra i redirect consentiti. Questo è l'unico passaggio di configurazione Auth che il connettore Supabase attuale non espone via API.
 2. Usare **Project URL** e una **publishable key** nel client browser.
 3. Non inserire mai nel repository chiavi `service_role` o secret keys.
 4. Dopo il primo accesso dell'amministratore, impostare il suo profilo come `admin`.
