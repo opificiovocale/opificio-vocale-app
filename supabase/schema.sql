@@ -1,6 +1,10 @@
 -- Opificio Vocale · Studio V1
--- Schema iniziale per Supabase/Postgres.
--- Eseguire nel SQL editor del progetto Supabase.
+-- Schema sicuro per Supabase/Postgres.
+-- Le note private sono fisicamente separate dai record leggibili dagli allievi.
+
+create schema if not exists private;
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
 
 create table if not exists public.students (
   id uuid primary key default gen_random_uuid(),
@@ -9,13 +13,18 @@ create table if not exists public.students (
   email text not null,
   telefono text,
   attivo boolean not null default true,
-  note_generali_private text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
 create unique index if not exists students_email_unique
   on public.students (lower(email));
+
+create table if not exists public.student_private_notes (
+  student_id uuid primary key references public.students(id) on delete cascade,
+  note text,
+  updated_at timestamptz not null default now()
+);
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -50,7 +59,6 @@ create table if not exists public.lessons (
   stato text not null default 'presente'
     check (stato in ('presente', 'assente', 'recupero', 'annullata')),
   focus text,
-  note_private text,
   riepilogo_allievo text,
   esercizi text,
   recording_url text,
@@ -62,14 +70,20 @@ create table if not exists public.lessons (
 );
 
 create index if not exists lessons_student_id_idx on public.lessons(student_id);
+create index if not exists lessons_package_id_idx on public.lessons(package_id);
 create index if not exists lessons_data_ora_idx on public.lessons(data_ora desc);
 
--- Profilo automatico dopo il primo accesso via magic link.
-create or replace function public.handle_new_user()
+create table if not exists public.lesson_private_notes (
+  lesson_id uuid primary key references public.lessons(id) on delete cascade,
+  note text,
+  updated_at timestamptz not null default now()
+);
+
+create or replace function private.handle_new_user()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
 begin
   insert into public.profiles (id, email, role)
@@ -79,86 +93,182 @@ begin
 end;
 $$;
 
+revoke all on function private.handle_new_user() from public, anon, authenticated;
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+  for each row execute function private.handle_new_user();
 
--- Helper per le policy. SECURITY DEFINER evita ricorsione RLS su profiles.
-create or replace function public.is_admin()
+create or replace function private.is_admin()
 returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
   select exists (
-    select 1 from public.profiles
-    where id = auth.uid() and role = 'admin'
+    select 1
+    from public.profiles
+    where id = (select auth.uid()) and role = 'admin'
   );
 $$;
 
-create or replace function public.current_student_id()
+create or replace function private.current_student_id()
 returns uuid
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, pg_temp
 as $$
-  select student_id from public.profiles where id = auth.uid();
+  select student_id
+  from public.profiles
+  where id = (select auth.uid());
 $$;
+
+revoke all on function private.is_admin() from public, anon;
+revoke all on function private.current_student_id() from public, anon;
+grant execute on function private.is_admin() to authenticated;
+grant execute on function private.current_student_id() to authenticated;
 
 alter table public.profiles enable row level security;
 alter table public.students enable row level security;
+alter table public.student_private_notes enable row level security;
 alter table public.packages enable row level security;
 alter table public.lessons enable row level security;
+alter table public.lesson_private_notes enable row level security;
 
-drop policy if exists "profiles_select_own_or_admin" on public.profiles;
 create policy "profiles_select_own_or_admin"
 on public.profiles for select
-using (id = auth.uid() or public.is_admin());
+to authenticated
+using (id = (select auth.uid()) or (select private.is_admin()));
 
-drop policy if exists "profiles_admin_write" on public.profiles;
-create policy "profiles_admin_write"
-on public.profiles for all
-using (public.is_admin())
-with check (public.is_admin());
+create policy "profiles_admin_insert"
+on public.profiles for insert
+to authenticated
+with check ((select private.is_admin()));
 
-drop policy if exists "students_select_own_or_admin" on public.students;
+create policy "profiles_admin_update"
+on public.profiles for update
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+create policy "profiles_admin_delete"
+on public.profiles for delete
+to authenticated
+using ((select private.is_admin()));
+
 create policy "students_select_own_or_admin"
 on public.students for select
-using (id = public.current_student_id() or public.is_admin());
+to authenticated
+using (id = (select private.current_student_id()) or (select private.is_admin()));
 
-drop policy if exists "students_admin_write" on public.students;
-create policy "students_admin_write"
-on public.students for all
-using (public.is_admin())
-with check (public.is_admin());
+create policy "students_admin_insert"
+on public.students for insert
+to authenticated
+with check ((select private.is_admin()));
 
-drop policy if exists "packages_select_own_or_admin" on public.packages;
+create policy "students_admin_update"
+on public.students for update
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+create policy "students_admin_delete"
+on public.students for delete
+to authenticated
+using ((select private.is_admin()));
+
+create policy "student_private_notes_admin_select"
+on public.student_private_notes for select
+to authenticated
+using ((select private.is_admin()));
+
+create policy "student_private_notes_admin_insert"
+on public.student_private_notes for insert
+to authenticated
+with check ((select private.is_admin()));
+
+create policy "student_private_notes_admin_update"
+on public.student_private_notes for update
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+create policy "student_private_notes_admin_delete"
+on public.student_private_notes for delete
+to authenticated
+using ((select private.is_admin()));
+
 create policy "packages_select_own_or_admin"
 on public.packages for select
-using (student_id = public.current_student_id() or public.is_admin());
+to authenticated
+using (student_id = (select private.current_student_id()) or (select private.is_admin()));
 
-drop policy if exists "packages_admin_write" on public.packages;
-create policy "packages_admin_write"
-on public.packages for all
-using (public.is_admin())
-with check (public.is_admin());
+create policy "packages_admin_insert"
+on public.packages for insert
+to authenticated
+with check ((select private.is_admin()));
 
-drop policy if exists "lessons_select_visible_own_or_admin" on public.lessons;
+create policy "packages_admin_update"
+on public.packages for update
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+create policy "packages_admin_delete"
+on public.packages for delete
+to authenticated
+using ((select private.is_admin()));
+
 create policy "lessons_select_visible_own_or_admin"
 on public.lessons for select
+to authenticated
 using (
-  public.is_admin()
+  (select private.is_admin())
   or (
-    student_id = public.current_student_id()
+    student_id = (select private.current_student_id())
     and visible_to_student = true
   )
 );
 
-drop policy if exists "lessons_admin_write" on public.lessons;
-create policy "lessons_admin_write"
-on public.lessons for all
-using (public.is_admin())
-with check (public.is_admin());
+create policy "lessons_admin_insert"
+on public.lessons for insert
+to authenticated
+with check ((select private.is_admin()));
+
+create policy "lessons_admin_update"
+on public.lessons for update
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+create policy "lessons_admin_delete"
+on public.lessons for delete
+to authenticated
+using ((select private.is_admin()));
+
+create policy "lesson_private_notes_admin_select"
+on public.lesson_private_notes for select
+to authenticated
+using ((select private.is_admin()));
+
+create policy "lesson_private_notes_admin_insert"
+on public.lesson_private_notes for insert
+to authenticated
+with check ((select private.is_admin()));
+
+create policy "lesson_private_notes_admin_update"
+on public.lesson_private_notes for update
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+create policy "lesson_private_notes_admin_delete"
+on public.lesson_private_notes for delete
+to authenticated
+using ((select private.is_admin()));
+
+revoke all on public.profiles, public.students, public.student_private_notes, public.packages, public.lessons, public.lesson_private_notes from anon;
+grant select, insert, update, delete on public.profiles, public.students, public.student_private_notes, public.packages, public.lessons, public.lesson_private_notes to authenticated;
