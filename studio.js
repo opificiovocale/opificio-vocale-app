@@ -100,8 +100,8 @@
           <form class="studio-form studio-auth-form" data-studio-otp>
             <p class="studio-helper">Abbiamo inviato un codice a <strong>${escapeHTML(pendingEmail)}</strong>.</p>
             <label>
-              <span>Codice a 6 cifre</span>
-              <input type="text" name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456">
+              <span>Codice di accesso</span>
+              <input type="text" name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" maxlength="10" required placeholder="12345678">
             </label>
             <button class="primary-button" type="submit">Entra in Studio <span aria-hidden="true">→</span></button>
             <button class="studio-text-button" type="button" data-studio-reset-login>Usa un’altra email</button>
@@ -114,7 +114,7 @@
               <input type="email" name="email" autocomplete="email" required placeholder="nome@email.it">
             </label>
             <button class="primary-button" type="submit">Mandami il codice <span aria-hidden="true">→</span></button>
-            <p class="studio-helper">Niente password e niente link: riceverai un codice monouso di 6 cifre.</p>
+            <p class="studio-helper">Niente password e niente link: riceverai un codice monouso via email.</p>
             <p class="studio-status" data-studio-status role="status"></p>
           </form>
         `}
@@ -647,9 +647,9 @@
     if (otpForm) {
       event.preventDefault();
       const email = getLoginEmail();
-      const token = otpForm.elements.token.value.replace(/\\D/g, "").slice(0, 6);
-      if (!email || token.length !== 6) {
-        setStatus("Inserisci il codice di 6 cifre ricevuto via email.", "error");
+      const token = otpForm.elements.token.value.replace(/\\D/g, "").slice(0, 10);
+      if (!email || token.length < 6 || token.length > 10) {
+        setStatus("Inserisci il codice numerico ricevuto via email.", "error");
         return;
       }
       setStatus("Verifico il codice…");
