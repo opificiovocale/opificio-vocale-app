@@ -70,6 +70,15 @@
     try { localStorage.setItem(SELECTED_STUDENT_KEY, id); } catch {}
   };
 
+  const getLoginEmail = () => {
+    try { return localStorage.getItem(LOGIN_EMAIL_KEY) || ""; }
+    catch { return ""; }
+  };
+
+  const clearLoginEmail = () => {
+    try { localStorage.removeItem(LOGIN_EMAIL_KEY); } catch {}
+  };
+
   const setStatus = (message, tone = "") => {
     const el = document.querySelector("[data-studio-status]");
     if (!el) return;
@@ -77,24 +86,40 @@
     el.dataset.tone = tone;
   };
 
-  const authMarkup = () => `
-    <section class="page studio-page" aria-labelledby="studio-login-title">
-      <header class="studio-hero">
-        <button class="back-button" type="button" data-route="home"><span aria-hidden="true">←</span> Home</button>
-        <p class="eyebrow">Area riservata</p>
-        <h1 id="studio-login-title">Studio.</h1>
-        <p class="lead">Accedi al tuo spazio Opificio Vocale.</p>
-      </header>
-      <form class="studio-form studio-auth-form" data-studio-login>
-        <label>
-          <span>Email</span>
-          <input type="email" name="email" autocomplete="email" required placeholder="nome@email.it">
-        </label>
-        <button class="primary-button" type="submit">Mandami il link di accesso <span aria-hidden="true">→</span></button>
-        <p class="studio-helper">Niente password: riceverai un link monouso via email.</p>
-        <p class="studio-status" data-studio-status role="status"></p>
-      </form>
-    </section>`;
+  const authMarkup = () => {
+    const pendingEmail = getLoginEmail();
+    return `
+      <section class="page studio-page" aria-labelledby="studio-login-title">
+        <header class="studio-hero">
+          <button class="back-button" type="button" data-route="home"><span aria-hidden="true">←</span> Home</button>
+          <p class="eyebrow">Area riservata</p>
+          <h1 id="studio-login-title">Studio.</h1>
+          <p class="lead">Accedi al tuo spazio Opificio Vocale.</p>
+        </header>
+        ${pendingEmail ? `
+          <form class="studio-form studio-auth-form" data-studio-otp>
+            <p class="studio-helper">Abbiamo inviato un codice a <strong>${escapeHTML(pendingEmail)}</strong>.</p>
+            <label>
+              <span>Codice a 6 cifre</span>
+              <input type="text" name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="123456">
+            </label>
+            <button class="primary-button" type="submit">Entra in Studio <span aria-hidden="true">→</span></button>
+            <button class="studio-text-button" type="button" data-studio-reset-login>Usa un’altra email</button>
+            <p class="studio-status" data-studio-status role="status"></p>
+          </form>
+        ` : `
+          <form class="studio-form studio-auth-form" data-studio-login>
+            <label>
+              <span>Email</span>
+              <input type="email" name="email" autocomplete="email" required placeholder="nome@email.it">
+            </label>
+            <button class="primary-button" type="submit">Mandami il codice <span aria-hidden="true">→</span></button>
+            <p class="studio-helper">Niente password e niente link: riceverai un codice monouso di 6 cifre.</p>
+            <p class="studio-status" data-studio-status role="status"></p>
+          </form>
+        `}
+      </section>`;
+  };
 
   const loadingMarkup = () => `
     <section class="page studio-page">
@@ -555,7 +580,14 @@
       await client.auth.signOut();
       session = null;
       profile = null;
+      clearLoginEmail();
       location.hash = "home";
+      return;
+    }
+
+    if (event.target.closest("[data-studio-reset-login]")) {
+      clearLoginEmail();
+      renderStudio();
       return;
     }
 
@@ -592,20 +624,48 @@
     if (loginForm) {
       event.preventDefault();
       const email = loginForm.elements.email.value.trim().toLowerCase();
-      setStatus("Invio il link…");
+      setStatus("Invio il codice…");
       try {
-        localStorage.setItem(LOGIN_EMAIL_KEY, email);
         const { error } = await client.auth.signInWithOtp({
           email,
-          options: {
-            shouldCreateUser: true,
-            emailRedirectTo: `${location.origin}${location.pathname}#studio`
-          }
+          options: { shouldCreateUser: true }
         });
         if (error) throw error;
-        setStatus("Link inviato. Apri l’email su questo dispositivo e tocca il pulsante di accesso.", "success");
+        localStorage.setItem(LOGIN_EMAIL_KEY, email);
+        app.innerHTML = authMarkup();
+        setStatus("Codice inviato. Inserisci qui le 6 cifre ricevute via email.", "success");
       } catch (error) {
-        setStatus(error.message || "Non riesco a inviare il link.", "error");
+        const message = error?.code === "over_email_send_rate_limit"
+          ? "Hai richiesto troppe email in poco tempo. Non inviarne altre adesso: riprova con un solo codice quando Supabase sblocca l’invio."
+          : (error.message || "Non riesco a inviare il codice.");
+        setStatus(message, "error");
+      }
+      return;
+    }
+
+    const otpForm = event.target.closest("[data-studio-otp]");
+    if (otpForm) {
+      event.preventDefault();
+      const email = getLoginEmail();
+      const token = otpForm.elements.token.value.replace(/\\D/g, "").slice(0, 6);
+      if (!email || token.length !== 6) {
+        setStatus("Inserisci il codice di 6 cifre ricevuto via email.", "error");
+        return;
+      }
+      setStatus("Verifico il codice…");
+      try {
+        const { data, error } = await client.auth.verifyOtp({
+          email,
+          token,
+          type: "email"
+        });
+        if (error) throw error;
+        session = data.session;
+        profile = null;
+        clearLoginEmail();
+        await renderStudio();
+      } catch (error) {
+        setStatus(error.message || "Codice non valido o scaduto.", "error");
       }
       return;
     }
