@@ -272,3 +272,144 @@ using ((select private.is_admin()));
 
 revoke all on public.profiles, public.students, public.student_private_notes, public.packages, public.lessons, public.lesson_private_notes from anon;
 grant select, insert, update, delete on public.profiles, public.students, public.student_private_notes, public.packages, public.lessons, public.lesson_private_notes to authenticated;
+
+
+-- Auth bootstrap e collegamento automatico profilo ↔ allievo.
+create table if not exists private.admin_allowlist (
+  email text primary key,
+  created_at timestamptz not null default now()
+);
+revoke all on table private.admin_allowlist from public, anon, authenticated;
+
+create or replace function private.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, private, pg_temp
+as $$
+declare
+  matched_student_id uuid;
+  assigned_role text := 'student';
+begin
+  if exists (
+    select 1 from private.admin_allowlist
+    where lower(email) = lower(coalesce(new.email, ''))
+  ) then
+    assigned_role := 'admin';
+  else
+    select id into matched_student_id
+    from public.students
+    where lower(email) = lower(coalesce(new.email, ''))
+    limit 1;
+  end if;
+
+  insert into public.profiles (id, email, role, student_id)
+  values (new.id, coalesce(new.email, ''), assigned_role, matched_student_id)
+  on conflict (id) do update
+    set email = excluded.email,
+        role = case when public.profiles.role = 'admin' then 'admin' else excluded.role end,
+        student_id = coalesce(public.profiles.student_id, excluded.student_id),
+        updated_at = now();
+  return new;
+end;
+$$;
+revoke all on function private.handle_new_user() from public, anon, authenticated;
+
+create or replace function private.link_profile_to_student()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  update public.profiles
+  set student_id = new.id, updated_at = now()
+  where role = 'student'
+    and lower(email) = lower(new.email)
+    and (student_id is null or student_id = new.id);
+  return new;
+end;
+$$;
+revoke all on function private.link_profile_to_student() from public, anon, authenticated;
+
+drop trigger if exists on_student_email_link_profile on public.students;
+create trigger on_student_email_link_profile
+  after insert or update of email on public.students
+  for each row execute function private.link_profile_to_student();
+
+alter table public.packages
+  drop constraint if exists packages_id_student_unique;
+alter table public.packages
+  add constraint packages_id_student_unique unique (id, student_id);
+
+alter table public.lessons
+  drop constraint if exists lessons_package_student_fkey;
+alter table public.lessons
+  add constraint lessons_package_student_fkey
+  foreign key (package_id, student_id)
+  references public.packages(id, student_id)
+  on delete set null;
+
+create or replace function public.create_studio_lesson(
+  p_student_id uuid,
+  p_package_id uuid,
+  p_data_ora timestamptz,
+  p_durata_minuti integer,
+  p_stato text,
+  p_focus text,
+  p_note_private text,
+  p_riepilogo_allievo text,
+  p_esercizi text,
+  p_recording_url text,
+  p_transcript_url text,
+  p_materials_url text,
+  p_visible_to_student boolean
+)
+returns uuid
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  new_lesson_id uuid;
+begin
+  if p_package_id is not null and not exists (
+    select 1 from public.packages
+    where id = p_package_id and student_id = p_student_id
+  ) then
+    raise exception 'Il percorso selezionato non appartiene a questo allievo.';
+  end if;
+
+  insert into public.lessons (
+    student_id, package_id, data_ora, durata_minuti, stato, focus,
+    riepilogo_allievo, esercizi, recording_url, transcript_url,
+    materials_url, visible_to_student
+  ) values (
+    p_student_id, p_package_id, p_data_ora, p_durata_minuti, p_stato, p_focus,
+    p_riepilogo_allievo, p_esercizi, p_recording_url, p_transcript_url,
+    p_materials_url, p_visible_to_student
+  )
+  returning id into new_lesson_id;
+
+  if nullif(trim(coalesce(p_note_private, '')), '') is not null then
+    insert into public.lesson_private_notes (lesson_id, note)
+    values (new_lesson_id, trim(p_note_private));
+  end if;
+
+  if p_package_id is not null and p_stato in ('presente', 'recupero') then
+    update public.packages
+    set incontri_usati = least(incontri_usati + 1, incontri_totali),
+        updated_at = now()
+    where id = p_package_id and student_id = p_student_id;
+  end if;
+
+  return new_lesson_id;
+end;
+$$;
+
+revoke all on function public.create_studio_lesson(
+  uuid, uuid, timestamptz, integer, text, text, text, text, text, text, text, text, boolean
+) from public, anon;
+grant execute on function public.create_studio_lesson(
+  uuid, uuid, timestamptz, integer, text, text, text, text, text, text, text, text, boolean
+) to authenticated;
