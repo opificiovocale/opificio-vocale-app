@@ -565,6 +565,28 @@
     }
   }, true);
 
+
+  document.addEventListener("change", event => {
+    const studentSelect = event.target.closest('[data-studio-lesson-form] select[name="student_id"]');
+    if (!studentSelect) return;
+    const form = studentSelect.closest("[data-studio-lesson-form]");
+    const packageSelect = form.elements.package_id;
+    const studentId = studentSelect.value;
+    let firstVisible = null;
+    [...packageSelect.options].forEach((option, index) => {
+      if (index === 0) {
+        option.hidden = false;
+        option.disabled = false;
+        return;
+      }
+      const visible = option.dataset.student === studentId;
+      option.hidden = !visible;
+      option.disabled = !visible;
+      if (visible && !firstVisible) firstVisible = option;
+    });
+    packageSelect.value = "";
+  });
+
   document.addEventListener("submit", async event => {
     const loginForm = event.target.closest("[data-studio-login]");
     if (loginForm) {
@@ -644,45 +666,27 @@
       setStatus("Salvo la lezione…");
 
       const packageId = lessonForm.elements.package_id.value || null;
-      const lessonPayload = {
-        student_id: lessonForm.elements.student_id.value,
-        package_id: packageId,
-        data_ora: new Date(lessonForm.elements.data_ora.value).toISOString(),
-        durata_minuti: Number(lessonForm.elements.durata_minuti.value),
-        stato: lessonForm.elements.stato.value,
-        focus: lessonForm.elements.focus.value.trim() || null,
-        riepilogo_allievo: lessonForm.elements.riepilogo_allievo.value.trim() || null,
-        esercizi: lessonForm.elements.esercizi.value.trim() || null,
-        recording_url: lessonForm.elements.recording_url.value.trim() || null,
-        transcript_url: lessonForm.elements.transcript_url.value.trim() || null,
-        materials_url: lessonForm.elements.materials_url.value.trim() || null,
-        visible_to_student: lessonForm.elements.visible_to_student.checked
-      };
+      const studentId = lessonForm.elements.student_id.value;
 
       try {
-        const { data: lesson, error } = await client.from("lessons").insert(lessonPayload).select("id").single();
+        const { error } = await client.rpc("create_studio_lesson", {
+          p_student_id: studentId,
+          p_package_id: packageId,
+          p_data_ora: new Date(lessonForm.elements.data_ora.value).toISOString(),
+          p_durata_minuti: Number(lessonForm.elements.durata_minuti.value),
+          p_stato: lessonForm.elements.stato.value,
+          p_focus: lessonForm.elements.focus.value.trim() || null,
+          p_note_private: lessonForm.elements.note_private.value.trim() || null,
+          p_riepilogo_allievo: lessonForm.elements.riepilogo_allievo.value.trim() || null,
+          p_esercizi: lessonForm.elements.esercizi.value.trim() || null,
+          p_recording_url: lessonForm.elements.recording_url.value.trim() || null,
+          p_transcript_url: lessonForm.elements.transcript_url.value.trim() || null,
+          p_materials_url: lessonForm.elements.materials_url.value.trim() || null,
+          p_visible_to_student: lessonForm.elements.visible_to_student.checked
+        });
         if (error) throw error;
 
-        const privateNote = lessonForm.elements.note_private.value.trim();
-        if (privateNote) {
-          const { error: noteError } = await client.from("lesson_private_notes").insert({
-            lesson_id: lesson.id,
-            note: privateNote
-          });
-          if (noteError) throw noteError;
-        }
-
-        if (packageId && ["presente", "recupero"].includes(lessonPayload.stato)) {
-          const { data: pkg } = await client.from("packages").select("incontri_usati,incontri_totali").eq("id", packageId).single();
-          if (pkg && pkg.incontri_usati < pkg.incontri_totali) {
-            await client.from("packages").update({
-              incontri_usati: pkg.incontri_usati + 1,
-              updated_at: new Date().toISOString()
-            }).eq("id", packageId);
-          }
-        }
-
-        setSelectedStudentId(lessonPayload.student_id);
+        setSelectedStudentId(studentId);
         location.hash = "studio-allievo";
       } catch (error) {
         setStatus(error.message || "Salvataggio non riuscito.", "error");
