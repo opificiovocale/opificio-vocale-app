@@ -1,27 +1,36 @@
 # Studio V1 · backend Supabase
 
-Questa cartella contiene lo schema iniziale per l'area privata di Opificio Vocale.
+Backend per l'area privata di Opificio Vocale.
 
-## Cosa serve per attivarlo
+## Stato attuale
 
-1. Creare un progetto Supabase.
-2. Aprire **SQL Editor** e applicare `schema.sql`.
-3. In **Authentication → URL Configuration** aggiungere l'URL pubblico dell'app tra i redirect consentiti.
-4. Recuperare:
-   - Project URL
-   - public `anon` key
-5. Copiare `studio-config.example.js` in `studio-config.js` e compilare i due valori pubblici.
-6. Impostare il profilo di Riccardo come `admin` nella tabella `profiles` dopo il primo accesso.
-7. Collegare ogni account allievo al record corretto valorizzando `profiles.student_id`.
+- Progetto Supabase creato: **Studio Opificio Vocale**
+- Regione: **eu-central-1**
+- Piano: **Free**
+- Schema applicato e verificato
+- RLS attiva su tutte le tabelle esposte
+- Security Advisor: nessun warning
+- Login e collegamento dell'interfaccia ancora da attivare
+
+## Attivazione nell'app
+
+1. Configurare in **Authentication → URL Configuration** l'URL pubblico dell'app e gli eventuali redirect consentiti.
+2. Usare **Project URL** e una **publishable key** nel client browser.
+3. Non inserire mai nel repository chiavi `service_role` o secret keys.
+4. Dopo il primo accesso dell'amministratore, impostare il suo profilo come `admin`.
+5. Per ogni allievo, collegare l'account Auth al record corretto tramite `profiles.student_id`.
 
 ## Sicurezza
 
-- Non inserire mai nel repository la `service_role` key.
-- Le policy RLS dello schema permettono agli allievi di leggere soltanto il proprio percorso e soltanto le lezioni con `visible_to_student = true`.
-- Le scritture su allievi, pacchetti e lezioni sono riservate al ruolo `admin`.
-- Le note private restano nello stesso record della lezione, ma non sono accessibili agli allievi perché la lettura è governata dalle policy e l'interfaccia allievo deve selezionare solo i campi condivisibili.
-- I file Drive devono avere permessi coerenti: il database protegge il record, non può rendere privato un file Drive configurato come pubblico.
+- Gli allievi possono leggere solo il proprio profilo, il proprio record `students`, i propri pacchetti e le lezioni esplicitamente marcate `visible_to_student = true`.
+- Le scritture su allievi, pacchetti e lezioni sono riservate all'admin.
+- Le note private **non sono nella stessa tabella dei dati condivisibili**:
+  - `student_private_notes`
+  - `lesson_private_notes`
+  Queste tabelle sono leggibili e modificabili soltanto dall'admin.
+- Le funzioni helper con privilegi elevati sono nello schema non esposto `private`, non in `public`.
+- I file Drive devono avere permessi coerenti: il database protegge il record e il link, ma non può rendere privato un file Drive configurato come pubblico.
 
-## Stato del branch
+## Branch
 
-L'interfaccia presente nel branch è ancora un prototipo con dati demo. Lo schema prepara il backend, ma nessuna credenziale reale è inclusa.
+La UI nel branch `feature/studio-v1-prototype` è ancora un prototipo con dati demo. Non va mergiata in produzione finché login, salvataggio e redirect Auth non sono stati collegati e testati.
