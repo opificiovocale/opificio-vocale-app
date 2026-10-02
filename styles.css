@@ -1886,3 +1886,170 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 
   .home-section-card strong { font-size: 28px; }
 }
+
+
+/* Anteprima · controlli pastello Opificio */
+:root {
+  --pastel-sage: #dce6da;
+  --pastel-sage-2: #e8eee4;
+  --pastel-rose: #f0d7da;
+  --pastel-mustard: #f2d98d;
+  --pastel-paper: #fbf7ef;
+  --pastel-terracotta: #e8c1b6;
+}
+
+/* Pulsanti generali */
+.primary-button {
+  border: 1px solid rgba(32, 35, 31, .18);
+  background: var(--pastel-sage);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.primary-button.secondary {
+  border: 1px solid rgba(32, 35, 31, .18);
+  background: var(--pastel-rose);
+  color: var(--ink);
+}
+
+.primary-button.danger {
+  border: 1px solid rgba(141, 63, 44, .18);
+  background: var(--pastel-terracotta);
+  color: var(--ink);
+}
+
+.voice-check-card .check-submit {
+  background: var(--pastel-mustard);
+}
+
+.outline-button,
+.minute-button,
+.path-link-button,
+.lesson-link-grid button,
+.path-links button {
+  border-color: rgba(32, 35, 31, .28);
+  background: var(--pastel-paper);
+  color: var(--ink);
+}
+
+.minute-button,
+.voice-reflection.open .minute-button {
+  background: var(--pastel-sage);
+  color: var(--ink);
+}
+
+/* Accessi principali home */
+.home-section-card {
+  border: 1px solid rgba(32, 35, 31, .14);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.home-section-card.teal-card {
+  background: var(--pastel-sage);
+  color: var(--ink);
+}
+
+.home-section-card.terracotta-card {
+  background: var(--pastel-rose);
+  color: var(--ink);
+}
+
+.home-section-card.mustard-card {
+  background: var(--pastel-mustard);
+  color: var(--ink);
+}
+
+.home-section-card.studio-card {
+  background: var(--pastel-sage-2);
+  color: var(--ink);
+}
+
+.home-section-card .arrow {
+  border-color: rgba(32, 35, 31, .32);
+}
+
+.new-content-badge,
+.inline-new-badge {
+  background: var(--pastel-mustard);
+  color: var(--ink);
+}
+
+/* Azioni Studio */
+.studio-action-card {
+  border-color: rgba(32, 35, 31, .14);
+}
+
+.studio-action-card:nth-child(1) { background: var(--pastel-sage); }
+.studio-action-card:nth-child(2) { background: var(--pastel-rose); }
+.studio-action-card:nth-child(3) { background: var(--pastel-mustard); }
+
+/* Navigazione inferiore più morbida/editoriale */
+.bottom-nav {
+  border-top: 1px solid rgba(32, 35, 31, .14);
+  background: rgba(251, 247, 239, .97);
+  box-shadow: 0 -8px 24px rgba(32, 35, 31, .07);
+  backdrop-filter: blur(14px);
+}
+
+.bottom-nav button {
+  min-height: 58px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: transparent;
+  color: rgba(32, 35, 31, .62);
+  transform: none;
+  transition: background .18s ease, color .18s ease, border-color .18s ease;
+}
+
+.bottom-nav button.active {
+  border-color: rgba(32, 35, 31, .12);
+  color: var(--ink);
+  transform: none;
+}
+
+.bottom-nav button[data-route="home"].active {
+  background: var(--pastel-sage);
+}
+
+.bottom-nav button[data-route="manifesti"].active {
+  background: var(--pastel-rose);
+}
+
+.bottom-nav button[data-route="audioteca"].active {
+  background: var(--pastel-mustard);
+}
+
+.bottom-nav button[data-route="percorsi"].active {
+  background: #ece4d7;
+}
+
+.bottom-nav button[data-route="studio"].active {
+  background: var(--pastel-sage-2);
+}
+
+.nav-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(32, 35, 31, .05);
+  font-size: 17px;
+}
+
+.bottom-nav button.active .nav-icon {
+  background: rgba(251, 247, 239, .58);
+}
+
+.nav-new-badge {
+  background: var(--terracotta);
+}
+
+@media (hover: hover) {
+  .primary-button:hover,
+  .bottom-nav button:hover,
+  .home-section-card:hover {
+    box-shadow: 0 4px 14px rgba(32, 35, 31, .08);
+  }
+}
