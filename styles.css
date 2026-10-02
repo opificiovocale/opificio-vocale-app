@@ -1706,3 +1706,51 @@ h1 em { color: var(--teal-soft); font-style: normal; }
   .bottom-nav button { font-size: 9px; gap: 3px; }
   .nav-icon { font-size: 18px; }
 }
+
+
+/* iPad orizzontale · usa tutta la larghezza */
+@media (min-width: 900px) and (max-width: 1366px) and (orientation: landscape) {
+  body {
+    padding: 0;
+    background: var(--ivory);
+  }
+
+  .app-shell,
+  .topbar,
+  .bottom-nav,
+  .podcast-dock {
+    width: 100%;
+    max-width: none;
+  }
+
+  .app-shell {
+    margin: 0;
+    min-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .topbar {
+    top: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+  }
+
+  .bottom-nav {
+    bottom: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+  }
+
+  .podcast-dock {
+    left: 0;
+    transform: none;
+  }
+
+  .studio-page,
+  .student-path-page {
+    width: 100%;
+  }
+}
