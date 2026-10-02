@@ -2602,3 +2602,97 @@ body,
 .student-path-hero .back-button {
   opacity: .82;
 }
+
+
+/* Home · icone accesso coerenti con la navigazione */
+.home-section-card .section-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+}
+
+.home-section-card .section-mark svg {
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Studio · bianco + grafite, senza gialli o verdi */
+.studio-page,
+.studio-page .studio-hero,
+.studio-page .studio-compact-header,
+.studio-page .studio-summary-grid,
+.studio-page .studio-section,
+.studio-page .studio-list,
+.studio-page .studio-edit-hub,
+.student-path-page,
+.student-path-page .student-path-hero,
+.student-path-page .path-stack {
+  background: #ffffff;
+}
+
+.studio-page .studio-stat,
+.studio-page .studio-empty,
+.studio-page .path-card,
+.student-path-page .path-card {
+  background: #ffffff;
+  border-color: rgba(32,35,31,.12);
+}
+
+.studio-page .studio-action-card,
+.studio-page .primary-button,
+.studio-page .primary-button.secondary,
+.studio-page .studio-count,
+.student-path-page .primary-button,
+.student-path-page .path-link-button {
+  background: #30332f;
+  color: #ffffff;
+  border-color: #30332f;
+}
+
+.studio-page .studio-action-card:nth-child(1),
+.studio-page .studio-action-card:nth-child(2),
+.studio-page .studio-action-card:nth-child(3) {
+  background: #30332f;
+  color: #ffffff;
+}
+
+.studio-page .studio-action-card small,
+.studio-page .studio-action-card strong,
+.studio-page .studio-action-card > span {
+  color: #ffffff;
+}
+
+.studio-page .studio-form input,
+.studio-page .studio-form select,
+.studio-page .studio-form textarea,
+.studio-page .studio-edit-hub .studio-form input,
+.studio-page .studio-edit-hub .studio-form select,
+.studio-page .studio-edit-hub .studio-form textarea {
+  background: #ffffff;
+  color: #20231f;
+  border-color: rgba(32,35,31,.20);
+}
+
+.studio-page .studio-form .private-field,
+.studio-page .private-note {
+  background: #ffffff;
+  border: 1px solid rgba(32,35,31,.12);
+  border-left: 3px solid #30332f;
+}
+
+.studio-page .student-avatar {
+  background: #30332f;
+  color: #ffffff;
+}
+
+.studio-page .studio-inline-panel,
+.studio-page .studio-data-row,
+.studio-page .lesson-history {
+  border-color: rgba(32,35,31,.12);
+}
