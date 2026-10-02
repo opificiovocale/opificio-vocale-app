@@ -2583,3 +2583,22 @@ body,
 .home-section-card .section-card-end > span:last-child {
   border-color: currentColor;
 }
+
+
+/* Vista allievo · contrasto corretto su fondo bianco */
+.student-path-hero {
+  background: var(--ov-white);
+  color: var(--ov-ink-soft);
+}
+
+.student-path-hero .eyebrow,
+.student-path-hero h1,
+.student-path-hero p,
+.student-path-hero .back-button,
+.student-path-hero .student-signout {
+  color: var(--ov-ink-soft);
+}
+
+.student-path-hero .back-button {
+  opacity: .82;
+}
