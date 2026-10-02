@@ -1349,5 +1349,18 @@ installButton.addEventListener("click", async () => {
 window.addEventListener("appinstalled", () => { installButton.hidden = true; });
 
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+  let reloadingForUpdate = false;
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloadingForUpdate) return;
+    reloadingForUpdate = true;
+    window.location.reload();
+  });
+
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("./sw.js?v=21");
+      await registration.update();
+    } catch {}
+  });
 }
