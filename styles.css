@@ -2845,3 +2845,71 @@ body,
 
 .studio-copy-status[data-tone="success"] { color: #355f4e; }
 .studio-copy-status[data-tone="error"] { color: #9a3f31; }
+
+
+/* Vista allievo · pagamenti compatti */
+.student-path-page .payment-card {
+  padding: 14px 16px;
+  font-family: var(--sans);
+}
+
+.student-path-page .payment-card small,
+.student-path-page .payment-card span,
+.student-path-page .payment-card strong,
+.student-path-page .payment-card p,
+.student-path-page .payment-card button {
+  font-family: var(--sans) !important;
+}
+
+.student-path-page .payment-card > small {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.student-path-page .payment-card > strong {
+  margin-top: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.student-path-page .payment-card .iban-value {
+  margin: 3px 0 0;
+  font-size: 13px !important;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.student-path-page .payment-meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.student-path-page .payment-meta p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.student-path-page .payment-meta b {
+  font-weight: 700;
+}
+
+.student-path-page .iban-copy-button {
+  min-height: 36px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border: 1px solid rgba(32,35,31,.22);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font-size: 10px !important;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -499,6 +499,10 @@
             <small>Pagamenti</small>
             <strong>IBAN</strong>
             <p class="iban-value">IT05 Z036 6901 6001 6202 7305 710</p>
+            <div class="payment-meta">
+              <p><b>Intestatario:</b> Riccardo Primitivo</p>
+              <p><b>Causale:</b> Opificio Vocale + nome del tuo percorso</p>
+            </div>
             <button class="iban-copy-button" type="button" data-copy-iban data-iban="IT05 Z036 6901 6001 6202 7305 710">Copia IBAN</button>
           </article>
 
