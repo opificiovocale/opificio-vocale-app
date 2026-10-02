@@ -65,10 +65,22 @@
         '<summary>Percorsi · '+packages.length+'</summary>' +
         '<div data-edit-packages></div>' +
       '</details>' +
-      '<details class="studio-inline-panel">' +
+      '<details class="studio-inline-panel" open>' +
         '<summary>Lezioni, note e link · '+lessons.length+'</summary>' +
         '<div data-edit-lessons></div>' +
-      '</details>';
+      '</details>' +
+      '<dialog class="app-dialog studio-delete-dialog" data-lesson-delete-dialog aria-labelledby="studioDeleteLessonTitle">' +
+        '<form method="dialog">' +
+          '<p class="eyebrow">Studio</p>' +
+          '<h2 id="studioDeleteLessonTitle">Eliminare questa lezione?</h2>' +
+          '<p data-delete-lesson-label></p>' +
+          '<p class="studio-status" data-delete-dialog-status role="status"></p>' +
+          '<div class="dialog-actions">' +
+            '<button class="primary-button secondary" value="cancel">Annulla</button>' +
+            '<button class="studio-delete-confirm" type="button" data-confirm-lesson-delete>Elimina</button>' +
+          '</div>' +
+        '</form>' +
+      '</dialog>';
 
     const packageBox = section.querySelector("[data-edit-packages]");
     packageBox.innerHTML = packages.length ? packages.map(pkg =>
@@ -93,10 +105,22 @@
     ).join("") : '<p class="studio-helper">Nessun percorso ancora inserito.</p>';
 
     const lessonBox = section.querySelector("[data-edit-lessons]");
-    lessonBox.innerHTML = lessons.length ? lessons.map(lesson =>
-      '<details class="studio-inline-panel">' +
-        '<summary>'+esc(new Intl.DateTimeFormat("it-IT",{day:"numeric",month:"short",year:"numeric"}).format(new Date(lesson.data_ora)))+' · '+esc(lesson.focus || "Lezione")+'</summary>' +
-        '<form class="studio-form studio-inline-form" data-edit-lesson>' +
+    lessonBox.innerHTML = lessons.length ? lessons.map(lesson => {
+      const label = esc(new Intl.DateTimeFormat("it-IT",{day:"numeric",month:"short",year:"numeric"}).format(new Date(lesson.data_ora)));
+      const focus = esc(lesson.focus || "Lezione");
+      return '<article class="studio-lesson-editor" data-lesson-card data-lesson-id="'+esc(lesson.id)+'">' +
+        '<div class="studio-lesson-row">' +
+          '<div class="studio-lesson-row-copy">' +
+            '<time>'+label+'</time>' +
+            '<strong>'+focus+'</strong>' +
+            '<small>'+esc(lesson.stato)+' · '+esc(lesson.durata_minuti || 60)+' min'+(lesson.visible_to_student ? ' · condivisa' : '')+'</small>' +
+          '</div>' +
+          '<div class="studio-row-actions">' +
+            '<button class="studio-row-edit" type="button" data-toggle-lesson-edit aria-expanded="false">Modifica</button>' +
+            '<button class="studio-row-delete" type="button" data-request-delete-lesson="'+esc(lesson.id)+'" data-lesson-label="'+label+' · '+focus+'">Elimina</button>' +
+          '</div>' +
+        '</div>' +
+        '<form class="studio-form studio-inline-form studio-lesson-edit-form" data-edit-lesson hidden>' +
           '<input type="hidden" name="lesson_id" value="'+esc(lesson.id)+'">' +
           '<div class="studio-form-row">' +
             '<label><span>Data e ora</span><input type="datetime-local" name="data_ora" value="'+esc(dt(lesson.data_ora))+'" required></label>' +
@@ -116,39 +140,83 @@
           '<label><span>Materiali</span><input type="url" name="materials_url" value="'+esc(lesson.materials_url)+'"></label>' +
           '<label class="studio-check"><input type="checkbox" name="visible_to_student" '+(lesson.visible_to_student ? "checked" : "")+'> <span>Visibile all’allievo</span></label>' +
           '<div class="studio-edit-actions">' +
-            '<button class="primary-button secondary" type="submit">Salva lezione, note e link</button>' +
-            '<button class="studio-delete-button" type="button" data-delete-lesson="'+esc(lesson.id)+'">Elimina lezione</button>' +
+            '<button class="primary-button" type="submit">Salva modifiche</button>' +
+            '<button class="studio-cancel-edit" type="button" data-cancel-lesson-edit>Chiudi</button>' +
           '</div>' +
           '<p class="studio-status" data-edit-status role="status"></p>' +
         '</form>' +
-      '</details>'
-    ).join("") : '<p class="studio-helper">Nessuna lezione ancora registrata.</p>';
+      '</article>';
+    }).join("") : '<p class="studio-helper">Nessuna lezione ancora registrata.</p>';
 
     const summary = document.querySelector(".studio-summary-grid");
     if (summary) summary.insertAdjacentElement("afterend", section);
   }
 
   document.addEventListener("click", async event => {
-    const deleteButton = event.target.closest("[data-delete-lesson]");
-    if (!deleteButton) return;
-
-    const lessonId = deleteButton.dataset.deleteLesson;
-    const form = deleteButton.closest("[data-edit-lesson]");
-    const ok = window.confirm("Eliminare definitivamente questa lezione? Verranno rimossi anche le note private collegate e, se la lezione contava nel percorso, il numero di incontri usati verrà aggiornato.");
-    if (!ok) return;
-
-    deleteButton.disabled = true;
-    setMessage(form, "Elimino la lezione…");
-
-    const { error } = await client.rpc("delete_studio_lesson", { p_lesson_id: lessonId });
-    if (error) {
-      deleteButton.disabled = false;
-      setMessage(form, error.message || "Non riesco a eliminare la lezione.", true);
+    const editButton = event.target.closest("[data-toggle-lesson-edit]");
+    if (editButton) {
+      const card = editButton.closest("[data-lesson-card]");
+      const form = card?.querySelector("[data-edit-lesson]");
+      if (!form) return;
+      const opening = form.hidden;
+      form.hidden = !opening;
+      editButton.setAttribute("aria-expanded", String(opening));
+      editButton.textContent = opening ? "Chiudi" : "Modifica";
+      if (opening) form.querySelector("input, select, textarea")?.focus({ preventScroll: true });
       return;
     }
 
-    setMessage(form, "Lezione eliminata.");
-    window.setTimeout(() => location.reload(), 350);
+    const cancelEdit = event.target.closest("[data-cancel-lesson-edit]");
+    if (cancelEdit) {
+      const card = cancelEdit.closest("[data-lesson-card]");
+      const form = card?.querySelector("[data-edit-lesson]");
+      const editButton = card?.querySelector("[data-toggle-lesson-edit]");
+      if (form) form.hidden = true;
+      if (editButton) {
+        editButton.setAttribute("aria-expanded", "false");
+        editButton.textContent = "Modifica";
+      }
+      return;
+    }
+
+    const requestDelete = event.target.closest("[data-request-delete-lesson]");
+    if (requestDelete) {
+      const dialog = document.querySelector("[data-lesson-delete-dialog]");
+      if (!dialog) return;
+      dialog.dataset.lessonId = requestDelete.dataset.requestDeleteLesson;
+      dialog.querySelector("[data-delete-lesson-label]").textContent = requestDelete.dataset.lessonLabel || "Lezione selezionata";
+      const status = dialog.querySelector("[data-delete-dialog-status]");
+      if (status) status.textContent = "La cancellazione è definitiva. Le note private collegate verranno rimosse e il conteggio del percorso sarà aggiornato.";
+      dialog.showModal();
+      return;
+    }
+
+    const confirmDelete = event.target.closest("[data-confirm-lesson-delete]");
+    if (confirmDelete) {
+      const dialog = confirmDelete.closest("[data-lesson-delete-dialog]");
+      const lessonId = dialog?.dataset.lessonId;
+      if (!dialog || !lessonId) return;
+
+      confirmDelete.disabled = true;
+      const status = dialog.querySelector("[data-delete-dialog-status]");
+      if (status) status.textContent = "Elimino la lezione…";
+
+      const { error } = await client.rpc("delete_studio_lesson", { p_lesson_id: lessonId });
+      if (error) {
+        confirmDelete.disabled = false;
+        if (status) {
+          status.textContent = error.message || "Non riesco a eliminare la lezione.";
+          status.dataset.tone = "error";
+        }
+        return;
+      }
+
+      if (status) {
+        status.textContent = "Lezione eliminata.";
+        status.dataset.tone = "success";
+      }
+      window.setTimeout(() => location.reload(), 280);
+    }
   }, true);
 
   document.addEventListener("submit", async event => {
