@@ -618,22 +618,22 @@ const pages = {
         <h2 id="home-sections-title">Tutto, da qui.</h2>
         <div class="home-section-grid">
           <button class="home-section-card teal-card" type="button" data-route="manifesti">
-            <span class="section-mark" aria-hidden="true">◎</span>
+            <span class="section-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.8h9.5L19 7.3v12.9H6z"/><path d="M15.5 3.8v3.7H19M9 11h7M9 14.5h7M9 18h5"/></svg></span>
             <span><small>Podcast e testi</small><strong>Manifesti</strong></span>
             <span class="section-card-end">${newManifestoBadgeMarkup()}<span aria-hidden="true">→</span></span>
           </button>
           <button class="home-section-card terracotta-card" type="button" data-route="audioteca">
-            <span class="section-mark" aria-hidden="true">◌</span>
+            <span class="section-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.2 13v-2a7.8 7.8 0 0 1 15.6 0v2"/><path d="M6.2 12.7H5a1.8 1.8 0 0 0-1.8 1.8v3A1.8 1.8 0 0 0 5 19.3h1.2zM17.8 12.7H19a1.8 1.8 0 0 1 1.8 1.8v3a1.8 1.8 0 0 1-1.8 1.8h-1.2z"/></svg></span>
             <span><small>Esperienze audio</small><strong>Audioteca</strong></span>
             <span aria-hidden="true">→</span>
           </button>
           <button class="home-section-card mustard-card" type="button" data-route="percorsi">
-            <span class="section-mark" aria-hidden="true">✦</span>
+            <span class="section-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5.2h14M5 12h14M5 18.8h14"/><circle cx="8" cy="5.2" r="1.5"/><circle cx="15.5" cy="12" r="1.5"/><circle cx="11" cy="18.8" r="1.5"/></svg></span>
             <span><small>Voce parlata e cantata</small><strong>Percorsi</strong></span>
             <span aria-hidden="true">→</span>
           </button>
           <button class="home-section-card studio-card" type="button" data-route="studio">
-            <span class="section-mark" aria-hidden="true">⌁</span>
+            <span class="section-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 6.5h15v13h-15z"/><path d="M8 6.5V4.7h8v1.8M8 11h8M8 15h5"/></svg></span>
             <span><small>Area riservata · prototipo</small><strong>Studio</strong></span>
             <span aria-hidden="true">→</span>
           </button>
