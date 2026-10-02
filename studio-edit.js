@@ -24,9 +24,15 @@
     el.dataset.tone = error ? "error" : "success";
   };
 
+  const refreshStudio = () => {
+    document.querySelector("[data-studio-edit-hub]")?.remove();
+    window.dispatchEvent(new Event("hashchange"));
+  };
+
   async function injectEditor() {
     if ((location.hash || "").split("?")[0] !== "#studio-allievo") return;
     if (document.querySelector("[data-studio-edit-hub]")) return;
+    if (!document.querySelector(".studio-summary-grid")) return;
     const studentId = selectedStudentId();
     if (!studentId) return;
 
@@ -39,6 +45,14 @@
     const student = studentRes.data;
     const packages = packageRes.data || [];
     const lessons = lessonRes.data || [];
+    const lessonNoteMap = new Map();
+    if (lessons.length) {
+      const { data: lessonNotes } = await client
+        .from("lesson_private_notes")
+        .select("lesson_id,note")
+        .in("lesson_id", lessons.map(lesson => lesson.id));
+      (lessonNotes || []).forEach(item => lessonNoteMap.set(item.lesson_id, item.note || ""));
+    }
 
     const section = document.createElement("section");
     section.className = "studio-section studio-edit-hub";
@@ -133,6 +147,7 @@
             '<option value="annullata" '+(lesson.stato==="annullata"?"selected":"")+'>Annullata</option>' +
           '</select></label>' +
           '<label><span>Focus / argomenti</span><input name="focus" value="'+esc(lesson.focus)+'"></label>' +
+          '<label class="private-field"><span>Note private · solo docente</span><textarea rows="4" name="note_private">'+esc(lessonNoteMap.get(lesson.id) || "")+'</textarea></label>' +
           '<label><span>Riepilogo / note per l’allievo</span><textarea rows="4" name="riepilogo_allievo">'+esc(lesson.riepilogo_allievo)+'</textarea></label>' +
           '<label><span>Da fare / esercizi</span><textarea rows="3" name="esercizi">'+esc(lesson.esercizi)+'</textarea></label>' +
           '<label><span>Registrazione Drive</span><input type="url" name="recording_url" value="'+esc(lesson.recording_url)+'"></label>' +
@@ -215,7 +230,8 @@
         status.textContent = "Lezione eliminata.";
         status.dataset.tone = "success";
       }
-      window.setTimeout(() => location.reload(), 280);
+      dialog.close();
+      window.setTimeout(refreshStudio, 180);
     }
   }, true);
 
@@ -238,7 +254,7 @@
       const res = await client.from("students").update(payload).eq("id", studentForm.elements.student_id.value);
       if (res.error) return setMessage(studentForm, res.error.message, true);
       setMessage(studentForm, "Dati allievo aggiornati.");
-      window.setTimeout(() => location.reload(), 450);
+      window.setTimeout(refreshStudio, 220);
       return;
     }
 
@@ -253,7 +269,7 @@
       const res = await client.from("packages").update(payload).eq("id", packageForm.elements.package_id.value);
       if (res.error) return setMessage(packageForm, res.error.message, true);
       setMessage(packageForm, "Percorso aggiornato.");
-      window.setTimeout(() => location.reload(), 450);
+      window.setTimeout(refreshStudio, 220);
       return;
     }
 
@@ -271,10 +287,23 @@
         materials_url: lessonForm.elements.materials_url.value.trim() || null,
         visible_to_student: lessonForm.elements.visible_to_student.checked
       };
-      const res = await client.from("lessons").update(payload).eq("id", lessonForm.elements.lesson_id.value);
-      if (res.error) return setMessage(lessonForm, res.error.message, true);
+      const { error } = await client.rpc("update_studio_lesson", {
+        p_lesson_id: lessonForm.elements.lesson_id.value,
+        p_data_ora: payload.data_ora,
+        p_durata_minuti: payload.durata_minuti,
+        p_stato: payload.stato,
+        p_focus: payload.focus,
+        p_note_private: lessonForm.elements.note_private.value.trim() || null,
+        p_riepilogo_allievo: payload.riepilogo_allievo,
+        p_esercizi: payload.esercizi,
+        p_recording_url: payload.recording_url,
+        p_transcript_url: payload.transcript_url,
+        p_materials_url: payload.materials_url,
+        p_visible_to_student: payload.visible_to_student
+      });
+      if (error) return setMessage(lessonForm, error.message, true);
       setMessage(lessonForm, "Lezione, note e link aggiornati.");
-      window.setTimeout(() => location.reload(), 450);
+      window.setTimeout(refreshStudio, 220);
     }
   }, true);
 

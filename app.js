@@ -994,9 +994,11 @@ const pages = {
     </section>`
 };
 
+const STUDIO_ROUTE_NAMES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso"]);
+
 function currentRoute() {
   const route = requestedRoute();
-  return Object.hasOwn(pages, route) || manifestoForRoute(route) || route.startsWith("manifesto-") ? route : "home";
+  return Object.hasOwn(pages, route) || STUDIO_ROUTE_NAMES.has(route) || manifestoForRoute(route) || route.startsWith("manifesto-") ? route : "home";
 }
 
 let minuteInterval;
@@ -1082,7 +1084,8 @@ function render({ focus = false } = {}) {
   window.clearInterval(minuteInterval);
   const route = currentRoute();
   const importedManifesto = manifestoForRoute(route);
-  app.innerHTML = Object.hasOwn(pages, route) ? pages[route]() : importedManifesto ? importedManifestoMarkup(importedManifesto) : `
+  const studioRoute = STUDIO_ROUTE_NAMES.has(route);
+  if (!studioRoute) app.innerHTML = Object.hasOwn(pages, route) ? pages[route]() : importedManifesto ? importedManifestoMarkup(importedManifesto) : `
     <section class="page archive-message" data-archive-pending>
       <p class="eyebrow">Manifesti delle voci libere</p>
       <h1>${archiveLoading ? "Un momento di attesa." : "Questo Manifesto non è disponibile."}</h1>
@@ -1102,7 +1105,7 @@ function render({ focus = false } = {}) {
     percorso: "Il mio percorso · Opificio Vocale"
   };
   document.title = titles[route] || `${importedManifesto?.title || "Manifesti"} · Opificio Vocale`;
-  const activeRoute = route.startsWith("manifesto-") ? "manifesti" : route;
+  const activeRoute = studioRoute ? "studio" : route.startsWith("manifesto-") ? "manifesti" : route;
   navButtons.forEach(button => {
     const active = button.dataset.route === activeRoute;
     button.classList.toggle("active", active);
@@ -1258,7 +1261,7 @@ document.addEventListener("click", event => {
   const routeButton = event.target.closest("[data-route]");
   if (!routeButton) return;
   const route = routeButton.dataset.route;
-  if (!Object.hasOwn(pages, route) && !manifestoForRoute(route)) return;
+  if (!Object.hasOwn(pages, route) && !STUDIO_ROUTE_NAMES.has(route) && !manifestoForRoute(route)) return;
   event.preventDefault();
   if (currentRoute() === route) render({ focus: true });
   else location.hash = route;
@@ -1358,7 +1361,7 @@ if ("serviceWorker" in navigator) {
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./sw.js?v=21");
+      const registration = await navigator.serviceWorker.register("./sw.js?v=32");
       await registration.update();
     } catch {}
   });
