@@ -2276,3 +2276,233 @@ h1 em { color: var(--teal-soft); font-style: normal; }
     transform: translateY(-1px);
   }
 }
+
+
+/* Opificio · direzione pulita, ariosa, bianca */
+:root {
+  --ov-white: #ffffff;
+  --ov-soft: #f7f8f5;
+  --ov-sage-light: #e7eee4;
+  --ov-rose-light: #f4e6e8;
+  --ov-yellow-light: #f7edc9;
+  --ov-ink-soft: #2d312d;
+  --ov-line-soft: rgba(45,49,45,.12);
+}
+
+/* Fondo generale */
+body,
+.app-shell,
+.home-page,
+.studio-page,
+.student-path-page {
+  background: var(--ov-white);
+}
+
+/* Hero e sezioni: più respiro, niente blocchi pesanti */
+.voice-hero,
+.home-sections,
+.studio-hero,
+.studio-compact-header,
+.student-path-hero,
+.studio-summary-grid,
+.studio-section,
+.path-stack {
+  background: var(--ov-white);
+}
+
+.home-sections,
+.studio-section {
+  border-top-color: var(--ov-line-soft);
+  border-bottom-color: var(--ov-line-soft);
+}
+
+/* Accessi home: card leggere, quasi sospese */
+.home-section-grid {
+  gap: 14px;
+}
+
+.home-section-card {
+  min-height: 124px;
+  padding: 18px;
+  border: 1px solid var(--ov-line-soft);
+  border-radius: 16px;
+  background: var(--ov-white);
+  box-shadow: 0 8px 24px rgba(45,49,45,.04);
+  color: var(--ov-ink-soft);
+}
+
+.home-section-card.teal-card {
+  background: var(--ov-sage-light);
+}
+
+.home-section-card.terracotta-card {
+  background: var(--ov-rose-light);
+}
+
+.home-section-card.mustard-card {
+  background: var(--ov-yellow-light);
+}
+
+.home-section-card.studio-card {
+  background: var(--ov-white);
+}
+
+.home-section-card .arrow {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(45,49,45,.18);
+  border-radius: 50%;
+}
+
+/* Pulsanti */
+.primary-button {
+  min-height: 46px;
+  padding: 12px 17px;
+  border: 1px solid rgba(45,49,45,.14);
+  border-radius: 14px;
+  background: var(--ov-sage-light);
+  color: var(--ov-ink-soft);
+  box-shadow: none;
+}
+
+.primary-button.secondary {
+  background: var(--ov-white);
+  border-color: rgba(45,49,45,.16);
+}
+
+.primary-button.danger {
+  background: var(--ov-rose-light);
+  border-color: rgba(45,49,45,.12);
+}
+
+/* Studio più leggero */
+.studio-action-card {
+  border: 1px solid var(--ov-line-soft);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(45,49,45,.035);
+}
+
+.studio-action-card:nth-child(1) { background: var(--ov-sage-light); }
+.studio-action-card:nth-child(2) { background: var(--ov-rose-light); }
+.studio-action-card:nth-child(3) { background: var(--ov-yellow-light); }
+
+.studio-stat,
+.studio-empty,
+.path-card {
+  border: 1px solid var(--ov-line-soft);
+  border-radius: 16px;
+  background: var(--ov-white);
+  box-shadow: 0 6px 18px rgba(45,49,45,.025);
+}
+
+.studio-edit-hub {
+  background: var(--ov-white);
+  border-top: 1px solid var(--ov-line-soft);
+  border-bottom: 1px solid var(--ov-line-soft);
+}
+
+.studio-form input,
+.studio-form select,
+.studio-form textarea {
+  border: 1px solid rgba(45,49,45,.16);
+  border-radius: 12px;
+  background: var(--ov-white);
+}
+
+.studio-form .private-field,
+.private-note {
+  background: var(--ov-rose-light);
+  border-left-color: rgba(199,122,99,.45);
+}
+
+/* Link piccoli */
+.path-link-button,
+.lesson-link-grid button,
+.path-links button,
+.outline-button,
+.minute-button {
+  border: 1px solid rgba(45,49,45,.16);
+  border-radius: 12px;
+  background: var(--ov-white);
+  color: var(--ov-ink-soft);
+}
+
+/* Navigazione inferiore: bianca, leggerissima */
+.bottom-nav {
+  height: calc(74px + env(safe-area-inset-bottom));
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--ov-line-soft);
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 -4px 16px rgba(45,49,45,.04);
+  backdrop-filter: blur(12px);
+}
+
+.bottom-nav button {
+  min-height: 54px;
+  padding: 4px 3px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent !important;
+  color: rgba(45,49,45,.52);
+  gap: 4px;
+}
+
+.bottom-nav button.active {
+  color: var(--ov-ink-soft);
+  background: transparent !important;
+}
+
+.bottom-nav button::after {
+  content: "";
+  width: 18px;
+  height: 2px;
+  margin-top: 2px;
+  background: transparent;
+  border-radius: 99px;
+}
+
+.bottom-nav button[data-route="home"].active::after,
+.bottom-nav button[data-route="studio"].active::after {
+  background: #b8cbb2;
+}
+
+.bottom-nav button[data-route="manifesti"].active::after {
+  background: #ddb9c0;
+}
+
+.bottom-nav button[data-route="audioteca"].active::after {
+  background: #dec66f;
+}
+
+.bottom-nav button[data-route="percorsi"].active::after {
+  background: #c88f7d;
+}
+
+.nav-icon {
+  width: auto;
+  height: auto;
+  background: transparent !important;
+  font-size: 17px;
+}
+
+/* più aria su tablet */
+@media (min-width: 700px) {
+  .home-sections,
+  .voice-hero,
+  .studio-section,
+  .studio-hero,
+  .studio-compact-header,
+  .student-path-hero {
+    padding-top: 44px;
+    padding-bottom: 44px;
+  }
+
+  .home-section-grid {
+    gap: 18px;
+  }
+
+  .home-section-card {
+    min-height: 140px;
+    padding: 22px;
+  }
+}
