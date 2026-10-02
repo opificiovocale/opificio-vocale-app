@@ -1,4 +1,4 @@
-const CACHE = "opificio-vocale-v17";
+const CACHE = "opificio-vocale-v18";
 const APP_SHELL = [
   "./",
   "./index.html",
