@@ -1268,7 +1268,7 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 }
 
 
-/* Studio privato — prototipo V1 */
+/* Studio · area riservata */
 .studio-card { background: var(--ink); color: var(--paper); }
 .studio-page,
 .student-path-page { background: var(--paper); }
@@ -1279,16 +1279,6 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 .studio-compact-header h1,
 .student-path-hero h1 { margin-bottom: 14px; }
 .studio-hero .lead { margin-bottom: 16px; }
-.studio-prototype-note {
-  display: inline-block;
-  margin: 0;
-  padding: 7px 10px;
-  border: 1px dashed rgba(32,35,31,.35);
-  border-radius: 99px;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: .05em;
-}
 .studio-section { padding: 30px 22px; border-top: 1px solid var(--line); }
 .studio-section h2 { margin-bottom: 18px; font-size: clamp(34px, 9vw, 48px); line-height: 1; }
 .studio-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
