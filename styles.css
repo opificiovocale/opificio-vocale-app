@@ -2811,3 +2811,28 @@ body,
     justify-content: flex-start;
   }
 }
+
+/* Studio · invito allievo */
+.studio-student-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: 18px;
+}
+
+.studio-student-header-actions .primary-button {
+  width: auto;
+  min-width: 132px;
+}
+
+.studio-copy-status {
+  margin: 0;
+  max-width: 420px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(32,35,31,.64);
+}
+
+.studio-copy-status[data-tone="success"] { color: #355f4e; }
+.studio-copy-status[data-tone="error"] { color: #9a3f31; }
