@@ -2547,3 +2547,39 @@ body,
   width: 16px;
   height: 2px;
 }
+
+
+/* Home · accessi con colori più carichi */
+.home-section-card.teal-card {
+  background: #7f9f91;
+  color: #ffffff;
+}
+
+.home-section-card.terracotta-card {
+  background: #c97b6c;
+  color: #ffffff;
+}
+
+.home-section-card.mustard-card {
+  background: #d7ad39;
+  color: #20231f;
+}
+
+.home-section-card.studio-card {
+  background: #4f7468;
+  color: #ffffff;
+}
+
+.home-section-card .section-mark,
+.home-section-card small,
+.home-section-card strong,
+.home-section-card .section-card-end,
+.home-section-card > span:last-child {
+  color: inherit;
+}
+
+.home-section-card .arrow,
+.home-section-card > span:last-child,
+.home-section-card .section-card-end > span:last-child {
+  border-color: currentColor;
+}
