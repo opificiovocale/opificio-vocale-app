@@ -495,6 +495,13 @@
             <p>${pkg ? `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri utilizzati · ${Math.max(0, pkg.incontri_totali - pkg.incontri_usati)} rimanenti` : "Nessun pacchetto attivo associato."}</p>
           </article>
 
+          <article class="path-card payment-card">
+            <small>Pagamenti</small>
+            <strong>IBAN</strong>
+            <p class="iban-value">IT05 Z036 6901 6001 6202 7305 710</p>
+            <button class="iban-copy-button" type="button" data-copy-iban data-iban="IT05 Z036 6901 6001 6202 7305 710">Copia IBAN</button>
+          </article>
+
           ${latest ? `
             <article class="path-card">
               <small>Ultima lezione · ${escapeHTML(formatDate(latest.data_ora))}</small>
@@ -594,6 +601,20 @@
   });
 
   document.addEventListener("click", async event => {
+    const copyIban = event.target.closest("[data-copy-iban]");
+    if (copyIban) {
+      const originalLabel = copyIban.textContent;
+      try {
+        await copyText(copyIban.dataset.iban || "");
+        copyIban.textContent = "Copiato ✓";
+        window.setTimeout(() => { copyIban.textContent = originalLabel; }, 1800);
+      } catch {
+        copyIban.textContent = "Copia non riuscita";
+        window.setTimeout(() => { copyIban.textContent = originalLabel; }, 2200);
+      }
+      return;
+    }
+
     const copyInvite = event.target.closest("[data-copy-student-invite]");
     if (copyInvite) {
       const status = document.querySelector("[data-copy-invite-status]");
