@@ -2725,3 +2725,99 @@ body,
   opacity: .5;
   cursor: wait;
 }
+
+
+/* Studio · azioni rapide sulle lezioni */
+.studio-lesson-editor {
+  border-bottom: 1px solid rgba(32,35,31,.12);
+}
+
+.studio-lesson-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: center;
+  min-height: 82px;
+  padding: 14px 0;
+}
+
+.studio-lesson-row-copy time,
+.studio-lesson-row-copy small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.studio-lesson-row-copy strong {
+  display: block;
+  margin: 4px 0;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.studio-row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.studio-row-edit,
+.studio-row-delete,
+.studio-cancel-edit,
+.studio-delete-confirm {
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.studio-row-edit {
+  border: 1px solid #30332f;
+  background: #30332f;
+  color: #fff;
+}
+
+.studio-row-delete {
+  border: 1px solid rgba(154,63,49,.22);
+  background: #fff;
+  color: #9a3f31;
+}
+
+.studio-cancel-edit {
+  border: 1px solid rgba(32,35,31,.18);
+  background: #fff;
+  color: #30332f;
+}
+
+.studio-delete-confirm {
+  border: 1px solid #9a3f31;
+  background: #9a3f31;
+  color: #fff;
+}
+
+.studio-lesson-edit-form {
+  margin: 0 0 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(32,35,31,.08);
+}
+
+.studio-delete-dialog [data-delete-lesson-label] {
+  margin: 10px 0 8px;
+  font-family: var(--serif);
+  font-size: 19px;
+}
+
+@media (max-width: 560px) {
+  .studio-lesson-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .studio-row-actions {
+    justify-content: flex-start;
+  }
+}
