@@ -639,7 +639,6 @@ const pages = {
           </button>
         </div>
       </section>
-      <div class="brand-strip">Voce cantata · Voce parlata · Identità · Espressione</div>
     </section>`,
 
 
