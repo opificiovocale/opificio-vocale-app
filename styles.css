@@ -1015,7 +1015,7 @@ h1 em { color: var(--teal-soft); font-style: normal; }
   width: min(100%, 520px);
   height: calc(82px + env(safe-area-inset-bottom));
   padding: 8px 9px calc(8px + env(safe-area-inset-bottom));
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 5px;
   background: var(--ink);
   transform: translateX(-50%);
@@ -1693,5 +1693,64 @@ h1 em { color: var(--teal-soft); font-style: normal; }
   .studio-hero,
   .studio-compact-header {
     background: #dce6da;
+  }
+}
+
+
+/* Navigazione · Studio */
+.bottom-nav button[data-route="studio"].active {
+  background: #dce6da;
+  color: var(--ink);
+}
+@media (max-width: 420px) {
+  .bottom-nav button { font-size: 9px; gap: 3px; }
+  .nav-icon { font-size: 18px; }
+}
+
+
+/* iPad orizzontale · usa tutta la larghezza */
+@media (min-width: 900px) and (max-width: 1366px) and (orientation: landscape) {
+  body {
+    padding: 0;
+    background: var(--ivory);
+  }
+
+  .app-shell,
+  .topbar,
+  .bottom-nav,
+  .podcast-dock {
+    width: 100%;
+    max-width: none;
+  }
+
+  .app-shell {
+    margin: 0;
+    min-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .topbar {
+    top: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+  }
+
+  .bottom-nav {
+    bottom: 0;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+  }
+
+  .podcast-dock {
+    left: 0;
+    transform: none;
+  }
+
+  .studio-page,
+  .student-path-page {
+    width: 100%;
   }
 }
