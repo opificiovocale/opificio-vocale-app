@@ -2696,3 +2696,32 @@ body,
 .studio-page .lesson-history {
   border-color: rgba(32,35,31,.12);
 }
+
+
+/* Studio · eliminazione lezioni */
+.studio-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.studio-edit-actions .primary-button {
+  flex: 1 1 220px;
+}
+
+.studio-delete-button {
+  min-height: 46px;
+  padding: 12px 16px;
+  border: 1px solid rgba(140, 53, 39, .28);
+  border-radius: 14px;
+  background: #ffffff;
+  color: #9a3f31;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.studio-delete-button:disabled {
+  opacity: .5;
+  cursor: wait;
+}
