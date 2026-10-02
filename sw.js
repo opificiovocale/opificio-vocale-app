@@ -16,8 +16,7 @@ const APP_SHELL = [
   "./icon-512.png",
   "./icon-maskable-192.png",
   "./icon-maskable-512.png",
-  "./mask-icon.svg?v=7",
-  "./riccardo-home.webp"
+  "./mask-icon.svg?v=7"
 ];
 
 self.addEventListener("install", event => {
