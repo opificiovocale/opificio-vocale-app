@@ -392,7 +392,7 @@
           <label><span>Percorso</span>
             <select name="package_id">
               <option value="">Nessuno / singola lezione</option>
-              ${(packages || []).map(pkg => `<option value="${pkg.id}" data-student="${pkg.student_id}">${escapeHTML(pkg.nome_percorso)} · ${pkg.incontri_usati}/${pkg.incontri_totali}</option>`).join("")}
+              ${(packages || []).map((pkg, index) => `<option value="${pkg.id}" data-student="${pkg.student_id}" ${pkg.student_id !== selectedId ? "hidden disabled" : ""} ${pkg.student_id === selectedId && !(packages || []).slice(0, index).some(previous => previous.student_id === selectedId) ? "selected" : ""}>${escapeHTML(pkg.nome_percorso)} · ${pkg.incontri_usati}/${pkg.incontri_totali}</option>`).join("")}
             </select>
           </label>
           <div class="studio-form-row">
@@ -430,7 +430,7 @@
 
     const [studentRes, packageRes, lessonsRes] = await Promise.all([
       client.from("students").select("id,nome,cognome").eq("id", studentId).single(),
-      client.from("packages").select("*").eq("student_id", studentId).eq("stato", "attivo").maybeSingle(),
+      client.from("packages").select("*").eq("student_id", studentId).eq("stato", "attivo").order("created_at", { ascending: false }).limit(1).maybeSingle(),
       client.from("lessons").select("*").eq("student_id", studentId).eq("visible_to_student", true).order("data_ora", { ascending: false }).limit(20)
     ]);
     if (studentRes.error) throw studentRes.error;
@@ -616,7 +616,7 @@
       option.disabled = !visible;
       if (visible && !firstVisible) firstVisible = option;
     });
-    packageSelect.value = "";
+    packageSelect.value = firstVisible?.value || "";
   });
 
   document.addEventListener("submit", async event => {
@@ -633,7 +633,7 @@
         if (error) throw error;
         localStorage.setItem(LOGIN_EMAIL_KEY, email);
         app.innerHTML = authMarkup();
-        setStatus("Codice inviato. Inserisci qui le 6 cifre ricevute via email.", "success");
+        setStatus("Codice inviato. Inserisci qui il codice ricevuto via email.", "success");
       } catch (error) {
         const message = error?.code === "over_email_send_rate_limit"
           ? "Hai richiesto troppe email in poco tempo. Non inviarne altre adesso: riprova con un solo codice quando Supabase sblocca l’invio."
@@ -647,7 +647,7 @@
     if (otpForm) {
       event.preventDefault();
       const email = getLoginEmail();
-      const token = otpForm.elements.token.value.replace(/\\D/g, "").slice(0, 10);
+      const token = otpForm.elements.token.value.replace(/\D/g, "").slice(0, 10);
       if (!email || token.length < 6 || token.length > 10) {
         setStatus("Inserisci il codice numerico ricevuto via email.", "error");
         return;
