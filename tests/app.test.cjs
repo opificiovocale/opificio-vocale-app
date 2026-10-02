@@ -221,10 +221,15 @@ test('Il riepilogo offre un pulsante di modifica riconoscibile e collegato al mo
 test('Le versioni di codice e stile coincidono con quelle precache del service worker', () => {
   const shell = readFileSync(path.join(__dirname,'../index.html'),'utf8');
   const worker = readFileSync(path.join(__dirname,'../sw.js'),'utf8');
-  const version = worker.match(/const CACHE = "opificio-vocale-v(\d+)"/)[1];
-  for (const asset of ['app.js','styles.css']) {
-    assert.ok(shell.includes(`./${asset}?v=${version}`));
-    assert.ok(worker.includes(`./${asset}?v=${version}`));
+  const precachedAssets = vm.runInNewContext(`${worker}\nAPP_SHELL`, {
+    self: { addEventListener() {} }
+  });
+  const shellAssets = Array.from(shell.matchAll(/(?:src|href)="(\.\/[^"]+)"/g), match => match[1]);
+  // Il numero della cache è indipendente dalle versioni dei singoli asset.
+  for (const asset of ['app.js','styles.css','studio-config.js','studio.js','studio-edit.js']) {
+    const references = shellAssets.filter(reference => reference.startsWith(`./${asset}?v=`));
+    assert.equal(references.length, 1, `${asset} deve avere un solo riferimento versionato in index.html`);
+    assert.ok(precachedAssets.includes(references[0]), `${references[0]} deve essere presente in APP_SHELL`);
   }
 });
 

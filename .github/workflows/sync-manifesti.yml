@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - scripts/**
+      - tests/**
       - .github/workflows/sync-manifesti.yml
   schedule:
     - cron: "17 * * * *"
