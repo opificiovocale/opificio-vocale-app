@@ -605,8 +605,6 @@ const pages = {
   home: () => `
     <section class="page home-page" aria-labelledby="home-title">
       <section class="voice-hero">
-        <img src="./riccardo-home.webp" alt="Riccardo Primitivo Fiorucci, vocal trainer di Opificio Vocale">
-        <div class="voice-hero-shade" aria-hidden="true"></div>
         <div class="voice-hero-copy">
           <p class="eyebrow">Uno spazio per la tua voce</p>
           <h1 id="home-title">Oggi la tua voce<br><em>come sta?</em></h1>
