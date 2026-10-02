@@ -115,7 +115,10 @@
           '<label><span>Trascrizione</span><input type="url" name="transcript_url" value="'+esc(lesson.transcript_url)+'"></label>' +
           '<label><span>Materiali</span><input type="url" name="materials_url" value="'+esc(lesson.materials_url)+'"></label>' +
           '<label class="studio-check"><input type="checkbox" name="visible_to_student" '+(lesson.visible_to_student ? "checked" : "")+'> <span>Visibile all’allievo</span></label>' +
-          '<button class="primary-button secondary" type="submit">Salva lezione, note e link</button>' +
+          '<div class="studio-edit-actions">' +
+            '<button class="primary-button secondary" type="submit">Salva lezione, note e link</button>' +
+            '<button class="studio-delete-button" type="button" data-delete-lesson="'+esc(lesson.id)+'">Elimina lezione</button>' +
+          '</div>' +
           '<p class="studio-status" data-edit-status role="status"></p>' +
         '</form>' +
       '</details>'
@@ -124,6 +127,29 @@
     const summary = document.querySelector(".studio-summary-grid");
     if (summary) summary.insertAdjacentElement("afterend", section);
   }
+
+  document.addEventListener("click", async event => {
+    const deleteButton = event.target.closest("[data-delete-lesson]");
+    if (!deleteButton) return;
+
+    const lessonId = deleteButton.dataset.deleteLesson;
+    const form = deleteButton.closest("[data-edit-lesson]");
+    const ok = window.confirm("Eliminare definitivamente questa lezione? Verranno rimossi anche le note private collegate e, se la lezione contava nel percorso, il numero di incontri usati verrà aggiornato.");
+    if (!ok) return;
+
+    deleteButton.disabled = true;
+    setMessage(form, "Elimino la lezione…");
+
+    const { error } = await client.rpc("delete_studio_lesson", { p_lesson_id: lessonId });
+    if (error) {
+      deleteButton.disabled = false;
+      setMessage(form, error.message || "Non riesco a eliminare la lezione.", true);
+      return;
+    }
+
+    setMessage(form, "Lezione eliminata.");
+    window.setTimeout(() => location.reload(), 350);
+  }, true);
 
   document.addEventListener("submit", async event => {
     const studentForm = event.target.closest("[data-edit-student]");
