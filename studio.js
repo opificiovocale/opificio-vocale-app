@@ -86,6 +86,35 @@
     el.dataset.tone = tone;
   };
 
+  const copyText = async text => {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    textarea.remove();
+    if (!copied) throw new Error("Copy failed");
+  };
+
+  const studentInviteText = ({ nome, email }) => [
+    `Ciao ${nome}! Ho attivato il tuo spazio personale su Opificio Vocale.`,
+    "",
+    "Puoi accedere qui:",
+    "https://app.opificiovocale.it/#studio",
+    "",
+    `Usa questa email: ${email}`,
+    "Riceverai un codice monouso via email: non serve creare una password.",
+    "",
+    "Da lì potrai ritrovare il tuo percorso, i riepiloghi delle lezioni e i materiali che scelgo di condividere con te."
+  ].join("\n");
+
   const authMarkup = () => {
     const pendingEmail = getLoginEmail();
     return `
@@ -301,6 +330,10 @@
           <p class="eyebrow">Scheda allievo</p>
           <h1 id="student-title">${escapeHTML([student.nome, student.cognome].filter(Boolean).join(" "))}.</h1>
           <p>${escapeHTML(student.email)}${student.telefono ? ` · ${escapeHTML(student.telefono)}` : ""}</p>
+          <div class="studio-student-header-actions">
+            <button class="primary-button" type="button" data-copy-student-invite data-student-name="${escapeHTML(student.nome)}" data-student-email="${escapeHTML(student.email)}">Copia invito</button>
+            <p class="studio-copy-status" data-copy-invite-status role="status"></p>
+          </div>
         </header>
 
         <section class="studio-summary-grid">
@@ -561,6 +594,30 @@
   });
 
   document.addEventListener("click", async event => {
+    const copyInvite = event.target.closest("[data-copy-student-invite]");
+    if (copyInvite) {
+      const status = document.querySelector("[data-copy-invite-status]");
+      const originalLabel = copyInvite.textContent;
+      try {
+        await copyText(studentInviteText({
+          nome: copyInvite.dataset.studentName || "!",
+          email: copyInvite.dataset.studentEmail || ""
+        }));
+        copyInvite.textContent = "Copiato ✓";
+        if (status) {
+          status.textContent = "Invito copiato. Puoi incollarlo su WhatsApp, Messaggi o email.";
+          status.dataset.tone = "success";
+        }
+        window.setTimeout(() => { copyInvite.textContent = originalLabel; }, 1800);
+      } catch {
+        if (status) {
+          status.textContent = "Non riesco a copiarlo automaticamente su questo dispositivo.";
+          status.dataset.tone = "error";
+        }
+      }
+      return;
+    }
+
     const studentButton = event.target.closest("[data-studio-student]");
     if (studentButton) {
       event.preventDefault();
