@@ -2506,3 +2506,44 @@ body,
     padding: 22px;
   }
 }
+
+
+/* Home · check vocale prima, accessi subito dopo */
+.home-page .voice-hero { order: 1; }
+.home-page .voice-check-section { order: 2; }
+.home-page .home-sections { order: 3; }
+.home-page .communication-slot { order: 4; }
+.home-page .brand-strip { order: 5; }
+
+/* Navigazione · icone lineari arrotondate */
+.bottom-nav .nav-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  background: transparent !important;
+}
+
+.bottom-nav .nav-icon svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bottom-nav button {
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+
+.bottom-nav button.active .nav-icon {
+  color: var(--ov-ink-soft);
+}
+
+.bottom-nav button::after {
+  width: 16px;
+  height: 2px;
+}
