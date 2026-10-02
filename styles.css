@@ -1589,3 +1589,109 @@ h1 em { color: var(--teal-soft); font-style: normal; }
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+
+/* Studio · palette Opificio chiara */
+.studio-card {
+  background: #dce6da;
+  color: var(--ink);
+}
+
+.studio-page {
+  background: #eef2e9;
+}
+
+.studio-hero,
+.studio-compact-header {
+  background: #dce6da;
+}
+
+.studio-summary-grid {
+  background: #eef2e9;
+}
+
+.studio-stat {
+  border: 1px solid rgba(32, 35, 31, .14);
+  background: var(--paper);
+}
+
+.studio-count {
+  background: var(--mustard);
+  color: var(--ink);
+}
+
+.studio-empty {
+  border: 1px solid rgba(32, 35, 31, .12);
+  background: var(--paper);
+}
+
+.studio-action-card {
+  border-color: rgba(32, 35, 31, .18);
+  background: #dce6da;
+}
+
+.studio-action-card:nth-child(2) {
+  background: #f0d7da;
+}
+
+.studio-action-card:nth-child(3) {
+  background: #f2d98d;
+}
+
+.student-avatar {
+  background: var(--mustard);
+  color: var(--ink);
+}
+
+.studio-section {
+  border-top-color: rgba(32, 35, 31, .28);
+}
+
+.studio-inline-panel {
+  border-top-color: rgba(32, 35, 31, .24);
+}
+
+.studio-form input,
+.studio-form select,
+.studio-form textarea {
+  background: var(--paper);
+}
+
+.studio-form .private-field,
+.private-note {
+  background: #f0d7da;
+  border-left-color: var(--terracotta);
+}
+
+.studio-edit-hub {
+  background: #f2d98d;
+}
+
+.studio-edit-hub .studio-inline-panel {
+  border-top-color: rgba(32, 35, 31, .32);
+}
+
+.studio-edit-hub .studio-form input,
+.studio-edit-hub .studio-form select,
+.studio-edit-hub .studio-form textarea {
+  background: var(--paper);
+}
+
+.path-card {
+  background: #dce6da;
+}
+
+.path-card.path-next {
+  background: #f2d98d;
+}
+
+@media (min-width: 700px) and (max-width: 1180px) {
+  .studio-page {
+    background: #eef2e9;
+  }
+
+  .studio-hero,
+  .studio-compact-header {
+    background: #dce6da;
+  }
+}
