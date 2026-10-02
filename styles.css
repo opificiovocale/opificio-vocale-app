@@ -2053,3 +2053,226 @@ h1 em { color: var(--teal-soft); font-style: normal; }
     box-shadow: 0 4px 14px rgba(32, 35, 31, .08);
   }
 }
+
+
+/* Opificio · direzione editoriale ispirata ai caroselli */
+:root {
+  --ov-paper: #f4efe4;
+  --ov-ink: #20231f;
+  --ov-sage: #cbd8c7;
+  --ov-rose: #e5c4c9;
+  --ov-yellow: #e6bf58;
+  --ov-terracotta: #c77a63;
+  --ov-line: rgba(32, 35, 31, .28);
+}
+
+/* CTA: più grafiche, meno "app wellness" */
+.primary-button {
+  min-height: 46px;
+  padding: 12px 16px;
+  border: 1.5px solid var(--ov-ink);
+  border-radius: 10px;
+  background: var(--ov-sage);
+  color: var(--ov-ink);
+  box-shadow: none;
+  font-weight: 900;
+  letter-spacing: .03em;
+}
+
+.primary-button.secondary {
+  border: 1.5px solid var(--ov-ink);
+  background: var(--ov-paper);
+  color: var(--ov-ink);
+}
+
+.primary-button.danger {
+  border: 1.5px solid var(--ov-ink);
+  background: var(--ov-rose);
+  color: var(--ov-ink);
+}
+
+.primary-button:active {
+  transform: translateY(1px);
+}
+
+/* Home: blocchi più simili ai caroselli */
+.home-section-card {
+  min-height: 132px;
+  border: 1.5px solid var(--ov-ink);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.home-section-card.teal-card {
+  background: var(--ov-sage);
+  color: var(--ov-ink);
+}
+
+.home-section-card.terracotta-card {
+  background: var(--ov-rose);
+  color: var(--ov-ink);
+}
+
+.home-section-card.mustard-card {
+  background: var(--ov-yellow);
+  color: var(--ov-ink);
+}
+
+.home-section-card.studio-card {
+  background: var(--ov-paper);
+  color: var(--ov-ink);
+}
+
+.home-section-card .section-mark {
+  font-size: 34px;
+}
+
+.home-section-card strong {
+  font-weight: 400;
+}
+
+.home-section-card .arrow {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--ov-ink);
+  border-radius: 0;
+}
+
+/* Studio: stesso vocabolario grafico */
+.studio-action-card {
+  border: 1.5px solid var(--ov-ink);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.studio-action-card:nth-child(1) { background: var(--ov-sage); }
+.studio-action-card:nth-child(2) { background: var(--ov-rose); }
+.studio-action-card:nth-child(3) { background: var(--ov-yellow); }
+
+.studio-stat,
+.studio-empty,
+.path-card {
+  border: 1px solid var(--ov-line);
+  border-radius: 8px;
+}
+
+.studio-edit-hub {
+  background: var(--ov-paper);
+  border-top: 1.5px solid var(--ov-ink);
+  border-bottom: 1.5px solid var(--ov-ink);
+}
+
+.studio-form input,
+.studio-form select,
+.studio-form textarea {
+  border: 1.25px solid rgba(32,35,31,.45);
+  border-radius: 8px;
+  background: #fffdf8;
+}
+
+.studio-form .private-field,
+.private-note {
+  border-radius: 8px;
+  background: var(--ov-rose);
+}
+
+/* Link/azioni piccole */
+.path-link-button,
+.lesson-link-grid button,
+.path-links button,
+.outline-button,
+.minute-button {
+  border: 1.25px solid var(--ov-ink);
+  border-radius: 8px;
+  background: var(--ov-paper);
+  color: var(--ov-ink);
+}
+
+/* Navigazione bassa: editoriale, sottile, niente pill */
+.bottom-nav {
+  height: calc(76px + env(safe-area-inset-bottom));
+  padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+  border-top: 1.5px solid var(--ov-ink);
+  background: rgba(244, 239, 228, .985);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+}
+
+.bottom-nav button {
+  min-height: 56px;
+  padding: 5px 3px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  color: rgba(32,35,31,.62);
+  gap: 5px;
+  transform: none !important;
+}
+
+.bottom-nav button::after {
+  content: "";
+  width: 0;
+  height: 3px;
+  margin-top: 1px;
+  background: transparent;
+  transition: width .18s ease, background .18s ease;
+}
+
+.bottom-nav button.active {
+  color: var(--ov-ink);
+  background: transparent !important;
+}
+
+.bottom-nav button.active::after {
+  width: 28px;
+}
+
+.bottom-nav button[data-route="home"].active::after,
+.bottom-nav button[data-route="studio"].active::after {
+  background: var(--ov-sage);
+}
+
+.bottom-nav button[data-route="manifesti"].active::after {
+  background: var(--ov-rose);
+}
+
+.bottom-nav button[data-route="audioteca"].active::after {
+  background: var(--ov-yellow);
+}
+
+.bottom-nav button[data-route="percorsi"].active::after {
+  background: var(--ov-terracotta);
+}
+
+.nav-icon {
+  display: block;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent !important;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.nav-new-badge {
+  top: 4px;
+  right: 12px;
+  width: 6px;
+  height: 6px;
+  background: var(--ov-terracotta);
+}
+
+/* niente ombre decorative */
+@media (hover: hover) {
+  .home-section-card:hover,
+  .studio-action-card:hover,
+  .primary-button:hover,
+  .bottom-nav button:hover {
+    box-shadow: none;
+  }
+
+  .home-section-card:hover,
+  .studio-action-card:hover {
+    transform: translateY(-1px);
+  }
+}
