@@ -4,7 +4,7 @@
   const config = window.OPIFICIO_STUDIO_CONFIG;
   const sdk = window.supabase;
   const app = document.querySelector("#app");
-  const STUDIO_ROUTES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso"]);
+  const STUDIO_ROUTES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso", "reset-demo"]);
   const SELECTED_STUDENT_KEY = "opificio-studio-selected-student";
   const LOGIN_EMAIL_KEY = "opificio-studio-login-email";
 
@@ -291,6 +291,9 @@
             </button>
             <button class="studio-action-card" type="button" data-route="percorso">
               <span aria-hidden="true">↗</span><strong>Vista allievo</strong><small>Anteprima del percorso selezionato.</small>
+            </button>
+            <button class="studio-action-card" type="button" data-route="reset-demo">
+              <span aria-hidden="true">◉</span><strong>Test Reset</strong><small>Simula i 7 giorni e gli sblocchi lato allievo.</small>
             </button>
           </div>
         </section>
@@ -613,6 +616,89 @@
       </section>`;
   };
 
+
+  // Reset Vocale demo · solo docente, nessun dato reale
+  const resetDemoMarkup = () => {
+    if (profile?.role !== "admin") return errorMarkup("Questa anteprima è riservata al docente.");
+
+    const days = [
+      { title: "Partire da dove sei", practice: "Osservare e descrivere la voce di oggi, anche attraverso l’esplorazione della voce come oggetto." },
+      { title: "Altezza", practice: "Muovere la voce verso l’alto e verso il basso e notare che cosa cambia." },
+      { title: "Risonanza", practice: "Spostare la percezione del suono e osservare come cambia la voce." },
+      { title: "Peso", practice: "Esplorare una voce più leggera o più presente senza cercare un risultato giusto." },
+      { title: "Ritmo", practice: "Cambiare velocità, pause e intenzione per interrompere qualche automatismo." },
+      { title: "Possibilità", practice: "Combinare gli elementi esplorati e provare organizzazioni meno familiari." },
+      { title: "Scelta", practice: "Scegliere tra più possibilità vocali, invece di cercare una sola voce corretta." }
+    ];
+
+    const params = new URLSearchParams((location.hash.split("?")[1] || ""));
+    const requestedDay = Number(params.get("day")) || 1;
+    const day = Math.min(7, Math.max(1, requestedDay));
+    const current = days[day - 1];
+    const progress = Math.round((day / 7) * 100);
+
+    const audioButton = label => `
+      <button class="reset-audio-demo" type="button" disabled aria-disabled="true">
+        <span aria-hidden="true">▶</span>
+        <span><strong>${label}</strong><small>Audio non ancora caricato</small></span>
+      </button>`;
+
+    return `
+      <section class="page studio-page reset-demo-page" aria-labelledby="reset-demo-title">
+        <header class="studio-compact-header">
+          <button class="back-button" type="button" data-route="studio"><span aria-hidden="true">←</span> Studio</button>
+          <p class="eyebrow">Studio · Anteprima privata</p>
+          <h1 id="reset-demo-title">Test Reset.</h1>
+          <p>Questa schermata serve solo a te: simula ciò che vedrebbe una persona iscritta a Reset Vocale.</p>
+
+          <div class="reset-demo-controls" aria-label="Simula giorno del percorso">
+            <small>Simula il giorno</small>
+            <div class="reset-demo-switch">
+              ${days.map((_, index) => `<a href="#reset-demo?day=${index + 1}" aria-current="${day === index + 1 ? "true" : "false"}">${index + 1}</a>`).join("")}
+            </div>
+          </div>
+        </header>
+
+        <section class="reset-student-preview" aria-label="Anteprima lato allievo">
+          <div class="reset-preview-label">Da qui in giù · vista allievo</div>
+
+          <article class="path-card reset-progress-card">
+            <small>Percorso attivo</small>
+            <strong>Reset Vocale</strong>
+            <p>Giorno ${day} di 7</p>
+            <div class="reset-progress-track" aria-label="${progress}% del percorso sbloccato">
+              <span style="width:${progress}%"></span>
+            </div>
+          </article>
+
+          <article class="path-card reset-day-card is-current">
+            <small>Oggi · Giorno ${day}</small>
+            <strong>${escapeHTML(current.title)}</strong>
+            <p>${escapeHTML(current.practice)}</p>
+            ${audioButton(`Ascolta il Giorno ${day}`)}
+          </article>
+
+          ${day > 1 ? `
+            <section class="reset-available" aria-labelledby="reset-available-title">
+              <p class="content-kicker"><span>Già disponibili</span></p>
+              <h2 id="reset-available-title">I giorni precedenti.</h2>
+              <div class="reset-previous-list">
+                ${days.slice(0, day - 1).map((item, index) => `
+                  <article class="path-card reset-day-card is-past">
+                    <small>Giorno ${index + 1}</small>
+                    <strong>${escapeHTML(item.title)}</strong>
+                    ${audioButton(`Riascolta il Giorno ${index + 1}`)}
+                  </article>
+                `).join("")}
+              </div>
+            </section>
+          ` : ""}
+
+          <p class="reset-demo-note">I giorni futuri non compaiono. Nell’app reale verranno sbloccati automaticamente, uno al giorno.</p>
+        </section>
+      </section>`;
+  };
+
   const renderStudio = async () => {
     if (!isStudioRoute()) return;
     if (loading) { app.innerHTML = loadingMarkup(); return; }
@@ -648,6 +734,7 @@
       else if (route === "studio-allievo") app.innerHTML = await studentDetailMarkup(getSelectedStudentId());
       else if (route === "studio-lezione") app.innerHTML = await lessonFormMarkup();
       else if (route === "percorso") app.innerHTML = await studentPathMarkup();
+      else if (route === "reset-demo") app.innerHTML = resetDemoMarkup();
     } catch (error) {
       lastError = error?.message || "Errore inatteso.";
       app.innerHTML = errorMarkup(lastError);
