@@ -70,6 +70,7 @@
           '</div>' +
           '<label><span>Email</span><input type="email" name="email" value="'+esc(student.email)+'" required></label>' +
           '<label><span>Telefono</span><input type="tel" name="telefono" value="'+esc(student.telefono)+'"></label>' +
+          '<label><span>Data di nascita</span><input type="date" name="data_nascita" autocomplete="bday" value="'+esc(student.data_nascita)+'"></label>' +
           '<label class="studio-check"><input type="checkbox" name="attivo" '+(student.attivo ? "checked" : "")+'> <span>Allievo attivo</span></label>' +
           '<button class="primary-button" type="submit">Salva dati allievo</button>' +
           '<p class="studio-status" data-edit-status role="status"></p>' +
@@ -249,6 +250,7 @@
         cognome: studentForm.elements.cognome.value.trim(),
         email: studentForm.elements.email.value.trim().toLowerCase(),
         telefono: studentForm.elements.telefono.value.trim() || null,
+        data_nascita: studentForm.elements.data_nascita.value || null,
         attivo: studentForm.elements.attivo.checked
       };
       const res = await client.from("students").update(payload).eq("id", studentForm.elements.student_id.value);
