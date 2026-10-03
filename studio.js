@@ -190,16 +190,24 @@
     const tomorrow = new Date(todayStart);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const [{ count: studentCount }, lessonsResult] = await Promise.all([
+    const [{ count: studentCount }, lessonsResult, packagesResult] = await Promise.all([
       client.from("students").select("*", { count: "exact", head: true }).eq("attivo", true),
       client.from("lessons")
         .select("id,data_ora,stato,focus,student_id,students(nome,cognome)")
         .gte("data_ora", todayStart.toISOString())
         .lt("data_ora", tomorrow.toISOString())
-        .order("data_ora")
+        .order("data_ora"),
+      client.from("packages")
+        .select("id,student_id,nome_percorso,incontri_totali,incontri_usati,stato,students(nome,cognome)")
+        .eq("stato", "attivo")
+        .order("updated_at", { ascending: false })
     ]);
 
     const lessons = lessonsResult.data || [];
+    const activePackages = packagesResult.data || [];
+    const closingPackages = activePackages
+      .filter(pkg => Math.max(0, pkg.incontri_totali - pkg.incontri_usati) <= 1)
+      .sort((a, b) => (a.incontri_totali - a.incontri_usati) - (b.incontri_totali - b.incontri_usati));
     return `
       <section class="page studio-page" aria-labelledby="studio-title">
         <header class="studio-hero">
@@ -216,7 +224,7 @@
         <section class="studio-summary-grid" aria-label="Riepilogo Studio">
           <article class="studio-stat"><small>Allievi attivi</small><strong>${studentCount ?? 0}</strong><span>persone</span></article>
           <article class="studio-stat"><small>Oggi</small><strong>${lessons.length}</strong><span>lezioni</span></article>
-          <article class="studio-stat"><small>Database</small><strong>Live</strong><span>Supabase</span></article>
+          <article class="studio-stat"><small>Percorsi attivi</small><strong>${activePackages.length}</strong><span>in corso</span></article>
         </section>
 
         <section class="studio-section" aria-labelledby="studio-today">
@@ -245,6 +253,31 @@
               <button class="primary-button" type="button" data-route="studio-lezione">Nuova lezione <span aria-hidden="true">→</span></button>
             </div>`}
         </section>
+
+        ${closingPackages.length ? `
+        <section class="studio-section" aria-labelledby="studio-closing">
+          <div class="studio-section-heading">
+            <div>
+              <p class="content-kicker"><span>Percorsi</span> · In chiusura</p>
+              <h2 id="studio-closing">Ultimo incontro.</h2>
+            </div>
+            <span class="studio-count">${closingPackages.length}</span>
+          </div>
+          <div class="lesson-history">
+            ${closingPackages.map(pkg => {
+              const remaining = Math.max(0, pkg.incontri_totali - pkg.incontri_usati);
+              return `
+                <button type="button" data-studio-student="${pkg.student_id}">
+                  <time>${remaining}</time>
+                  <span>
+                    <strong>${escapeHTML([pkg.students?.nome, pkg.students?.cognome].filter(Boolean).join(" "))}</strong>
+                    <small>${escapeHTML(pkg.nome_percorso)} · ${remaining === 1 ? "1 incontro rimasto" : "da chiudere"}</small>
+                  </span>
+                  <span>→</span>
+                </button>`;
+            }).join("")}
+          </div>
+        </section>` : ""}
 
         <section class="studio-section studio-actions">
           <p class="content-kicker"><span>Accessi rapidi</span></p>
@@ -483,13 +516,14 @@
 
     const [studentRes, packageRes, lessonsRes] = await Promise.all([
       client.from("students").select("id,nome,cognome").eq("id", studentId).single(),
-      client.from("packages").select("*").eq("student_id", studentId).eq("stato", "attivo").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      client.from("packages").select("*").eq("student_id", studentId).order("created_at", { ascending: false }).limit(20),
       client.from("lessons").select("*").eq("student_id", studentId).eq("visible_to_student", true).order("data_ora", { ascending: false }).limit(20)
     ]);
     if (studentRes.error) throw studentRes.error;
 
     const student = studentRes.data;
-    const pkg = packageRes.data;
+    const packages = packageRes.data || [];
+    const pkg = packages.find(item => item.stato === "attivo") || packages[0] || null;
     const lessons = lessonsRes.data || [];
     const latest = lessons[0];
 
@@ -510,9 +544,13 @@
 
         <section class="path-stack">
           <article class="path-card">
-            <small>Percorso attivo</small>
+            <small>${pkg?.stato === "completato" ? "Percorso completato" : pkg?.stato === "sospeso" ? "Percorso in pausa" : "Percorso attivo"}</small>
             <strong>${escapeHTML(pkg?.nome_percorso || "Percorso individuale")}</strong>
-            <p>${pkg ? `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri utilizzati · ${Math.max(0, pkg.incontri_totali - pkg.incontri_usati)} rimanenti` : "Nessun pacchetto attivo associato."}</p>
+            <p>${pkg
+              ? (pkg.stato === "completato"
+                ? `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri · percorso completato`
+                : `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri utilizzati · ${Math.max(0, pkg.incontri_totali - pkg.incontri_usati)} rimanenti`)
+              : "Nessun percorso associato."}</p>
           </article>
 
           <article class="path-card payment-card">
