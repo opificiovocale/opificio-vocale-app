@@ -48,6 +48,19 @@
     return new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
   };
 
+  const calculateAge = value => {
+    if (!value) return null;
+    const [year, month, day] = String(value).split("-").map(Number);
+    if (!year || !month || !day) return null;
+    const today = new Date();
+    let age = today.getFullYear() - year;
+    const beforeBirthday =
+      (today.getMonth() + 1 < month) ||
+      (today.getMonth() + 1 === month && today.getDate() < day);
+    if (beforeBirthday) age -= 1;
+    return age >= 0 ? age : null;
+  };
+
   const formatDateTime = value => {
     if (!value) return "—";
     return new Intl.DateTimeFormat("it-IT", {
@@ -253,7 +266,7 @@
 
   const studentsMarkup = async () => {
     const { data, error } = await client.from("students")
-      .select("id,nome,cognome,email,attivo,packages(id,nome_percorso,incontri_totali,incontri_usati,stato)")
+      .select("id,nome,cognome,email,data_nascita,attivo,packages(id,nome_percorso,incontri_totali,incontri_usati,stato)")
       .order("nome");
     if (error) throw error;
     const students = data || [];
@@ -269,12 +282,17 @@
         <section class="studio-list">
           ${students.map(student => {
             const activePackage = (student.packages || []).find(p => p.stato === "attivo");
+            const age = calculateAge(student.data_nascita);
             const initials = `${student.nome?.[0] || ""}${student.cognome?.[0] || ""}`.toUpperCase();
             return `
               <button class="student-row" type="button" data-studio-student="${student.id}">
                 <span class="student-avatar" aria-hidden="true">${escapeHTML(initials || "OV")}</span>
                 <span>
-                  <small>${escapeHTML(activePackage ? `${activePackage.nome_percorso} · ${activePackage.incontri_usati}/${activePackage.incontri_totali}` : "Nessun percorso attivo")}</small>
+                  <small>${escapeHTML([
+                    age !== null ? `${age} anni` : "",
+                    activePackage ? `${activePackage.nome_percorso} · ${activePackage.incontri_usati}/${activePackage.incontri_totali}` : "Nessun percorso attivo",
+                    student.attivo ? "scheda attiva" : "scheda in pausa"
+                  ].filter(Boolean).join(" · "))}</small>
                   <strong>${escapeHTML([student.nome, student.cognome].filter(Boolean).join(" "))}</strong>
                   <em>${escapeHTML(student.email)}</em>
                 </span>
@@ -291,6 +309,7 @@
               </div>
               <label><span>Email</span><input type="email" name="email" required autocomplete="email"></label>
               <label><span>Telefono</span><input type="tel" name="telefono" autocomplete="tel"></label>
+              <label><span>Data di nascita</span><input type="date" name="data_nascita" autocomplete="bday"></label>
               <button class="primary-button" type="submit">Crea scheda</button>
               <p class="studio-status" data-studio-status role="status"></p>
             </form>
@@ -322,6 +341,7 @@
     const lessons = lessonsRes.data || [];
     const activePackage = packages.find(p => p.stato === "attivo");
     const latest = lessons[0];
+    const age = calculateAge(student.data_nascita);
 
     return `
       <section class="page studio-page" aria-labelledby="student-title">
@@ -329,7 +349,7 @@
           <button class="back-button" type="button" data-route="studio-allievi"><span aria-hidden="true">←</span> Allievi</button>
           <p class="eyebrow">Scheda allievo</p>
           <h1 id="student-title">${escapeHTML([student.nome, student.cognome].filter(Boolean).join(" "))}.</h1>
-          <p>${escapeHTML(student.email)}${student.telefono ? ` · ${escapeHTML(student.telefono)}` : ""}</p>
+          <p>${age !== null ? `${age} anni · ` : ""}${escapeHTML(student.email)}${student.telefono ? ` · ${escapeHTML(student.telefono)}` : ""}</p>
           <div class="studio-student-header-actions">
             <button class="primary-button" type="button" data-copy-student-invite data-student-name="${escapeHTML(student.nome)}" data-student-email="${escapeHTML(student.email)}">Copia invito</button>
             <p class="studio-copy-status" data-copy-invite-status role="status"></p>
@@ -776,7 +796,8 @@
         nome: studentForm.elements.nome.value.trim(),
         cognome: studentForm.elements.cognome.value.trim(),
         email: studentForm.elements.email.value.trim().toLowerCase(),
-        telefono: studentForm.elements.telefono.value.trim() || null
+        telefono: studentForm.elements.telefono.value.trim() || null,
+        data_nascita: studentForm.elements.data_nascita.value || null
       };
       const { data, error } = await client.from("students").insert(payload).select("id").single();
       if (error) { setStatus(error.message, "error"); return; }
