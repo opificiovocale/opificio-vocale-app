@@ -402,6 +402,10 @@ begin
   if p_package_id is not null and p_stato in ('presente', 'recupero') then
     update public.packages
     set incontri_usati = least(incontri_usati + 1, incontri_totali),
+        stato = case
+          when least(incontri_usati + 1, incontri_totali) >= incontri_totali then 'completato'
+          else stato
+        end,
         updated_at = now()
     where id = p_package_id and student_id = p_student_id;
   end if;
@@ -416,3 +420,125 @@ revoke all on function public.create_studio_lesson(
 grant execute on function public.create_studio_lesson(
   uuid, uuid, timestamptz, integer, text, text, text, text, text, text, text, text, boolean
 ) to authenticated;
+
+create or replace function public.update_studio_lesson(
+  p_lesson_id uuid,
+  p_data_ora timestamptz,
+  p_durata_minuti integer,
+  p_stato text,
+  p_focus text,
+  p_note_private text,
+  p_riepilogo_allievo text,
+  p_esercizi text,
+  p_recording_url text,
+  p_transcript_url text,
+  p_materials_url text,
+  p_visible_to_student boolean
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  v_old public.lessons%rowtype;
+  v_old_counted boolean;
+  v_new_counted boolean;
+begin
+  select * into v_old
+  from public.lessons
+  where id = p_lesson_id
+  for update;
+
+  if not found then raise exception 'Lezione non trovata.'; end if;
+
+  v_old_counted := v_old.stato in ('presente', 'recupero');
+  v_new_counted := p_stato in ('presente', 'recupero');
+
+  update public.lessons
+  set data_ora = p_data_ora,
+      durata_minuti = p_durata_minuti,
+      stato = p_stato,
+      focus = p_focus,
+      riepilogo_allievo = p_riepilogo_allievo,
+      esercizi = p_esercizi,
+      recording_url = p_recording_url,
+      transcript_url = p_transcript_url,
+      materials_url = p_materials_url,
+      visible_to_student = p_visible_to_student,
+      updated_at = now()
+  where id = p_lesson_id;
+
+  if nullif(trim(coalesce(p_note_private, '')), '') is null then
+    delete from public.lesson_private_notes where lesson_id = p_lesson_id;
+  else
+    insert into public.lesson_private_notes (lesson_id, note, updated_at)
+    values (p_lesson_id, trim(p_note_private), now())
+    on conflict (lesson_id)
+    do update set note = excluded.note, updated_at = excluded.updated_at;
+  end if;
+
+  if v_old.package_id is not null and v_old_counted is distinct from v_new_counted then
+    if v_new_counted then
+      update public.packages
+      set incontri_usati = least(incontri_usati + 1, incontri_totali),
+          stato = case
+            when least(incontri_usati + 1, incontri_totali) >= incontri_totali then 'completato'
+            else stato
+          end,
+          updated_at = now()
+      where id = v_old.package_id and student_id = v_old.student_id;
+    else
+      update public.packages
+      set incontri_usati = greatest(incontri_usati - 1, 0),
+          stato = case
+            when stato = 'completato' and greatest(incontri_usati - 1, 0) < incontri_totali then 'attivo'
+            else stato
+          end,
+          updated_at = now()
+      where id = v_old.package_id and student_id = v_old.student_id;
+    end if;
+  end if;
+end;
+$$;
+
+revoke all on function public.update_studio_lesson(
+  uuid, timestamptz, integer, text, text, text, text, text, text, text, text, boolean
+) from public, anon;
+grant execute on function public.update_studio_lesson(
+  uuid, timestamptz, integer, text, text, text, text, text, text, text, text, boolean
+) to authenticated;
+
+create or replace function public.delete_studio_lesson(p_lesson_id uuid)
+returns void
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  v_lesson public.lessons%rowtype;
+begin
+  select * into v_lesson
+  from public.lessons
+  where id = p_lesson_id
+  for update;
+
+  if not found then raise exception 'Lezione non trovata.'; end if;
+
+  delete from public.lessons where id = p_lesson_id;
+
+  if v_lesson.package_id is not null and v_lesson.stato in ('presente', 'recupero') then
+    update public.packages
+    set incontri_usati = greatest(incontri_usati - 1, 0),
+        stato = case
+          when stato = 'completato' and greatest(incontri_usati - 1, 0) < incontri_totali then 'attivo'
+          else stato
+        end,
+        updated_at = now()
+    where id = v_lesson.package_id and student_id = v_lesson.student_id;
+  end if;
+end;
+$$;
+
+revoke all on function public.delete_studio_lesson(uuid) from public, anon;
+grant execute on function public.delete_studio_lesson(uuid) to authenticated;
