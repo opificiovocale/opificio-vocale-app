@@ -543,7 +543,8 @@
 
     const student = studentRes.data;
     const packages = packageRes.data || [];
-    const pkg = packages.find(item => item.stato === "attivo") || packages[0] || null;
+    const activePackages = packages.filter(item => item.stato === "attivo");
+    const displayPackages = activePackages.length ? activePackages : packages.slice(0, 1);
     const lessons = lessonsRes.data || [];
     const latest = lessons[0];
 
@@ -576,15 +577,21 @@
         </header>
 
         <section class="path-stack">
-          <article class="path-card">
-            <small>${pkg?.stato === "completato" ? "Percorso completato" : pkg?.stato === "sospeso" ? "Percorso in pausa" : "Percorso attivo"}</small>
-            <strong>${escapeHTML(pkg?.nome_percorso || "Percorso individuale")}</strong>
-            <p>${pkg
-              ? (pkg.stato === "completato"
+          ${displayPackages.length ? displayPackages.map(pkg => `
+            <article class="path-card">
+              <small>${pkg.stato === "completato" ? "Percorso completato" : pkg.stato === "sospeso" ? "Percorso in pausa" : "Percorso attivo"}</small>
+              <strong>${escapeHTML(pkg.nome_percorso || "Percorso individuale")}</strong>
+              <p>${pkg.stato === "completato"
                 ? `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri · percorso completato`
-                : `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri utilizzati · ${Math.max(0, pkg.incontri_totali - pkg.incontri_usati)} rimanenti`)
-              : "Nessun percorso associato."}</p>
-          </article>
+                : `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri utilizzati · ${Math.max(0, pkg.incontri_totali - pkg.incontri_usati)} rimanenti`}</p>
+            </article>
+          `).join("") : `
+            <article class="path-card">
+              <small>Percorso</small>
+              <strong>Nessun percorso associato.</strong>
+              <p>Quando Riccardo attiverà un percorso, comparirà qui.</p>
+            </article>
+          `}
 
           <article class="path-card payment-card">
             <small>Pagamenti</small>
