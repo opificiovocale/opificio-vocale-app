@@ -5,6 +5,8 @@
   const sdk = window.supabase;
   const app = document.querySelector("#app");
   const STUDIO_ROUTES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso", "reset-demo"]);
+  const isResetPackage = pkg => String(typeof pkg === "string" ? pkg : pkg?.nome_percorso || "").trim().toLowerCase() === "reset vocale";
+  const packageUnit = pkg => isResetPackage(pkg) ? "giorni" : "incontri";
   const SELECTED_STUDENT_KEY = "opificio-studio-selected-student";
   const LOGIN_EMAIL_KEY = "opificio-studio-login-email";
 
@@ -415,7 +417,7 @@
             <div class="lesson-history">
               ${packages.map(pkg => `
                 <div class="studio-data-row">
-                  <span><strong>${escapeHTML(pkg.nome_percorso)}</strong><small>${pkg.incontri_usati}/${pkg.incontri_totali} · ${escapeHTML(pkg.stato)}</small></span>
+                  <span><strong>${escapeHTML(pkg.nome_percorso)}</strong><small>${pkg.incontri_usati}/${pkg.incontri_totali} ${packageUnit(pkg)} · ${escapeHTML(pkg.stato)}</small></span>
                 </div>
               `).join("")}
             </div>` : ""}
@@ -877,6 +879,20 @@
     }
   }, true);
 
+
+  document.addEventListener("input", event => {
+    const packageName = event.target.closest('[data-studio-package-form] input[name="nome_percorso"]');
+    if (!packageName) return;
+    const form = packageName.closest("[data-studio-package-form]");
+    const countField = form.querySelector("[data-package-count-field]");
+    const hint = form.querySelector("[data-reset-package-hint]");
+    const countInput = form.elements.incontri_totali;
+    const reset = isResetPackage(packageName.value);
+    if (countField) countField.hidden = reset;
+    if (hint) hint.hidden = !reset;
+    countInput.required = !reset;
+    if (reset) countInput.value = 7;
+  }, true);
 
   document.addEventListener("change", event => {
     const previewSelect = event.target.closest("[data-studio-preview-student]");
