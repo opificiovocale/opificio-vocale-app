@@ -556,9 +556,6 @@
       <section class="page student-path-page" aria-labelledby="path-title">
         <header class="student-path-hero">
           <button class="back-button" type="button" data-route="${profile?.role === "admin" ? "studio-allievo" : "home"}"><span aria-hidden="true">←</span> Indietro</button>
-          <p class="eyebrow">Il tuo spazio in Opificio Vocale</p>
-          <h1 id="path-title">Il mio<br>percorso.</h1>
-          <p class="student-path-intro">Ciao ${escapeHTML(student.nome)}. Qui ritrovi ciò che Riccardo ha scelto di condividere con te.</p>
           ${profile?.role === "admin" ? `
             <div class="student-preview-picker">
               <label for="studio-preview-student">Scegli allievo</label>
@@ -572,6 +569,10 @@
               <small>Stai visualizzando: <strong>${escapeHTML([student.nome, student.cognome].filter(Boolean).join(" "))}</strong></small>
             </div>
           ` : '<button class="student-signout" type="button" data-studio-signout>Esci</button>'}
+          <p class="eyebrow">Il tuo spazio in Opificio Vocale</p>
+          <h1 id="path-title">Il mio<br>percorso.</h1>
+          <p class="student-path-intro">Ciao ${escapeHTML(student.nome)}. Qui ritrovi ciò che Riccardo ha scelto di condividere con te.</p>
+
         </header>
 
         <section class="path-stack">
