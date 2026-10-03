@@ -1405,6 +1405,35 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 .studio-data-row small { display: block; margin-top: 4px; font-size: 9px; text-transform: uppercase; }
 .studio-link-cluster { display: grid; gap: 4px; text-align: right; }
 .studio-link-cluster a { font-size: 9px; font-weight: 900; text-transform: uppercase; }
+
+/* Studio · storico lezioni in Vista allievo */
+.student-lesson-history { margin-top: 16px; border-top: 1px solid var(--line); }
+.student-lesson-item { border-bottom: 1px solid var(--line); }
+.student-lesson-item summary {
+  display: grid; grid-template-columns: minmax(76px, auto) 1fr auto; gap: 12px; align-items: center;
+  min-height: 76px; padding: 13px 0; list-style: none; cursor: pointer;
+}
+.student-lesson-item summary::-webkit-details-marker { display: none; }
+.student-lesson-item summary::marker { content: ""; }
+.student-lesson-item summary time {
+  font-size: 9px; font-weight: 900; letter-spacing: .06em; text-transform: uppercase;
+}
+.student-lesson-heading strong {
+  display: block; font-family: var(--serif); font-size: 18px; font-weight: 400;
+}
+.student-lesson-heading small {
+  display: block; margin-top: 4px; font-size: 9px; text-transform: uppercase;
+}
+.student-lesson-toggle {
+  font-size: 20px; line-height: 1; transition: transform .2s ease;
+}
+.student-lesson-item[open] .student-lesson-toggle { transform: rotate(45deg); }
+.student-lesson-body { padding: 0 0 20px min(88px, 18vw); }
+.student-lesson-body > p {
+  margin: 0; font-family: var(--serif); font-size: 16px; line-height: 1.45;
+}
+.student-lesson-body .path-links { margin-top: 16px; }
+
 .path-link-button {
   display: block; min-height: 44px; padding: 11px 12px; border: 1px solid var(--ink);
   border-radius: 99px; color: inherit; text-decoration: none; font-size: 11px; font-weight: 800;
@@ -1422,6 +1451,8 @@ h1 em { color: var(--teal-soft); font-style: normal; }
 @media (max-width: 520px) {
   .studio-data-row { grid-template-columns: 72px 1fr; }
   .studio-link-cluster { grid-column: 2; grid-auto-flow: column; justify-content: start; text-align: left; }
+  .student-lesson-item summary { grid-template-columns: 72px 1fr auto; }
+  .student-lesson-body { padding-left: 84px; }
 }
 
 
