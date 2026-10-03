@@ -3231,3 +3231,61 @@ body,
     padding-left: 122px;
   }
 }
+
+
+/* Studio centrale · navigazione pulita */
+.bottom-nav button.nav-studio {
+  width: 68px;
+  height: 68px;
+  min-height: 68px;
+  margin-top: -12px;
+  padding: 7px 4px 6px;
+  justify-self: center;
+  align-self: start;
+  gap: 2px;
+  border: 1px solid rgba(255,255,255,.94);
+  border-radius: 50%;
+  background: var(--ov-ink-soft) !important;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(32,35,31,.12);
+  transform: none !important;
+}
+
+.bottom-nav button.nav-studio .nav-icon,
+.bottom-nav button.nav-studio.active .nav-icon {
+  color: #ffffff !important;
+}
+
+.bottom-nav button.nav-studio > span:last-child {
+  color: #ffffff;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.bottom-nav button.nav-studio::after,
+.bottom-nav button.nav-studio.active::after {
+  display: none;
+}
+
+.bottom-nav button.nav-studio.active {
+  background: #20231f !important;
+  color: #ffffff;
+}
+
+@media (hover: hover) {
+  .bottom-nav button.nav-studio:hover {
+    background: #20231f !important;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(32,35,31,.12);
+  }
+}
+
+@media (max-width: 370px) {
+  .bottom-nav button.nav-studio {
+    width: 64px;
+    height: 64px;
+    min-height: 64px;
+    margin-top: -10px;
+  }
+}
