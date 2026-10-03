@@ -3269,3 +3269,76 @@ body,
 .bottom-nav button.nav-studio::after {
   display: block;
 }
+
+
+/* Bottom nav · layout finale approvato · 2026-10-03 */
+.bottom-nav {
+  height: calc(66px + env(safe-area-inset-bottom));
+  padding: 4px 10px calc(4px + env(safe-area-inset-bottom));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.bottom-nav button {
+  min-height: 50px;
+  padding: 3px 2px;
+  gap: 2px;
+  border-radius: 0;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.bottom-nav .nav-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.bottom-nav .nav-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.5;
+}
+
+.bottom-nav button::after {
+  width: 14px;
+  height: 2px;
+  margin-top: 1px;
+}
+
+.bottom-nav button.nav-studio {
+  min-height: 50px;
+  padding: 3px 2px 3px 12px;
+  border-left: 1px solid var(--ov-line-soft);
+  border-radius: 0;
+}
+
+.bottom-nav button.nav-studio .nav-studio-wordmark {
+  /* Mantiene esattamente il wordmark tipografico già approvato. */
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+
+.nav-new-badge {
+  display: none !important;
+}
+
+@media (min-width: 700px) {
+  .bottom-nav {
+    height: 70px;
+    padding: 5px 16px;
+  }
+
+  .bottom-nav button {
+    min-height: 54px;
+    font-size: 10px;
+  }
+
+  .bottom-nav button.nav-studio {
+    min-height: 54px;
+    padding-left: 16px;
+  }
+}
