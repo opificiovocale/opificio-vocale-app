@@ -1,11 +1,11 @@
-const CACHE = "opificio-vocale-v42";
+const CACHE = "opificio-vocale-v43";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=31",
-  "./app.js?v=18",
+  "./styles.css?v=32",
+  "./app.js?v=19",
   "./studio-config.js?v=1",
-  "./studio.js?v=10",
+  "./studio.js?v=11",
   "./studio-edit.js?v=6",
   "./manifesti.json",
   "./comunicazioni.json",
