@@ -425,8 +425,13 @@
             <summary>＋ Aggiungi percorso</summary>
             <form class="studio-form studio-inline-form" data-studio-package-form>
               <input type="hidden" name="student_id" value="${student.id}">
-              <label><span>Nome percorso</span><input name="nome_percorso" required placeholder="Es. Vocal Boom"></label>
-              <label><span>Numero incontri</span><input type="number" name="incontri_totali" min="1" max="100" value="4" required></label>
+              <label><span>Nome percorso</span><input name="nome_percorso" list="studio-package-names" required placeholder="Es. Vocal Boom"></label>
+              <datalist id="studio-package-names">
+                <option value="Reset Vocale"></option>
+                <option value="Vocal Boom"></option>
+              </datalist>
+              <label data-package-count-field><span>Numero incontri</span><input type="number" name="incontri_totali" min="1" max="100" value="4" required></label>
+              <p class="studio-helper" data-reset-package-hint hidden>Reset Vocale dura 7 giorni: il totale è impostato automaticamente.</p>
               <button class="primary-button" type="submit">Crea percorso</button>
               <p class="studio-status" data-studio-status role="status"></p>
             </form>
@@ -584,8 +589,8 @@
               <small>${pkg.stato === "completato" ? "Percorso completato" : pkg.stato === "sospeso" ? "Percorso in pausa" : "Percorso attivo"}</small>
               <strong>${escapeHTML(pkg.nome_percorso || "Percorso individuale")}</strong>
               <p>${pkg.stato === "completato"
-                ? `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri · percorso completato`
-                : `${pkg.incontri_usati} di ${pkg.incontri_totali} incontri utilizzati · ${Math.max(0, pkg.incontri_totali - pkg.incontri_usati)} rimanenti`}</p>
+                ? `${pkg.incontri_usati} di ${pkg.incontri_totali} ${packageUnit(pkg)} · percorso completato`
+                : `${pkg.incontri_usati} di ${pkg.incontri_totali} ${packageUnit(pkg)} completati · ${Math.max(0, pkg.incontri_totali - pkg.incontri_usati)} rimanenti`}</p>
             </article>
           `).join("") : `
             <article class="path-card">
@@ -888,9 +893,16 @@
     const hint = form.querySelector("[data-reset-package-hint]");
     const countInput = form.elements.incontri_totali;
     const reset = isResetPackage(packageName.value);
-    if (countField) countField.hidden = reset;
-    if (hint) hint.hidden = !reset;
+    if (countField) {
+      countField.hidden = reset;
+      countField.style.display = reset ? "none" : "";
+    }
+    if (hint) {
+      hint.hidden = !reset;
+      hint.style.display = reset ? "" : "none";
+    }
     countInput.required = !reset;
+    countInput.disabled = reset;
     if (reset) countInput.value = 7;
   }, true);
 
@@ -998,7 +1010,7 @@
       const payload = {
         student_id: packageForm.elements.student_id.value,
         nome_percorso: packageForm.elements.nome_percorso.value.trim(),
-        incontri_totali: Number(packageForm.elements.incontri_totali.value),
+        incontri_totali: isResetPackage(packageForm.elements.nome_percorso.value) ? 7 : Number(packageForm.elements.incontri_totali.value),
         incontri_usati: 0,
         data_inizio: new Date().toISOString().slice(0, 10),
         stato: "attivo"
