@@ -526,14 +526,30 @@
 
         <section class="studio-section">
           <p class="content-kicker"><span>Storico</span></p>
-          <h2>Le mie lezioni.</h2>
-          <div class="lesson-history">
-            ${lessons.map(lesson => `
-              <div class="studio-data-row">
-                <time>${escapeHTML(formatDate(lesson.data_ora))}</time>
-                <span><strong>${escapeHTML(lesson.focus || "Lezione")}</strong><small>${lesson.durata_minuti} min</small></span>
-              </div>
-            `).join("") || '<div class="studio-empty"><p>Nessuna lezione condivisa.</p></div>'}
+          <h2>Lezioni precedenti.</h2>
+          <p class="studio-helper">Apri una lezione per ritrovare riepilogo, esercizi e materiali condivisi.</p>
+          <div class="student-lesson-history">
+            ${lessons.slice(1).map(lesson => `
+              <details class="student-lesson-item">
+                <summary>
+                  <time>${escapeHTML(formatDate(lesson.data_ora))}</time>
+                  <span class="student-lesson-heading">
+                    <strong>${escapeHTML(lesson.focus || "Lezione")}</strong>
+                    <small>${lesson.durata_minuti ? `${lesson.durata_minuti} min` : "Lezione"}</small>
+                  </span>
+                  <span class="student-lesson-toggle" aria-hidden="true">＋</span>
+                </summary>
+                <div class="student-lesson-body">
+                  <p>${escapeHTML(lesson.riepilogo_allievo || "Riepilogo non inserito.")}</p>
+                  ${lesson.esercizi ? `<p class="path-task"><b>Da fare:</b> ${escapeHTML(lesson.esercizi)}</p>` : ""}
+                  <div class="path-links">
+                    ${linkButton(lesson.recording_url, "▶ Rivedi lezione")}
+                    ${linkButton(lesson.transcript_url, "▤ Trascrizione")}
+                    ${linkButton(lesson.materials_url, "＋ Materiali")}
+                  </div>
+                </div>
+              </details>
+            `).join("") || '<div class="studio-empty"><p>Non ci sono ancora lezioni precedenti condivise.</p></div>'}
           </div>
         </section>
       </section>`;
