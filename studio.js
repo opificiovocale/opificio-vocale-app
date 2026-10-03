@@ -505,7 +505,24 @@
 
   const studentPathMarkup = async () => {
     let studentId = profile?.student_id || "";
-    if (profile?.role === "admin") studentId = getSelectedStudentId();
+    let previewStudents = [];
+
+    if (profile?.role === "admin") {
+      const { data, error } = await client
+        .from("students")
+        .select("id,nome,cognome,attivo")
+        .order("nome", { ascending: true })
+        .order("cognome", { ascending: true });
+      if (error) throw error;
+
+      previewStudents = data || [];
+      studentId = getSelectedStudentId();
+
+      if (!studentId && previewStudents[0]?.id) {
+        studentId = previewStudents[0].id;
+        setSelectedStudentId(studentId);
+      }
+    }
 
     if (!studentId) return `
       <section class="page student-path-page">
@@ -513,7 +530,7 @@
           <button class="back-button" type="button" data-route="${profile?.role === "admin" ? "studio" : "home"}"><span aria-hidden="true">←</span> Indietro</button>
           <p class="eyebrow">Il mio percorso</p>
           <h1>Non è ancora<br>collegato.</h1>
-          <p>${profile?.role === "admin" ? "Scegli prima un allievo dalla sezione Allievi per vedere la sua anteprima." : "Il tuo account è attivo, ma non è ancora associato a una scheda allievo."}</p>
+          <p class="student-path-intro">${profile?.role === "admin" ? "Non ci sono ancora allievi da visualizzare." : "Il tuo account è attivo, ma non è ancora associato a una scheda allievo."}</p>
         </header>
       </section>`;
 
@@ -541,8 +558,20 @@
           <button class="back-button" type="button" data-route="${profile?.role === "admin" ? "studio-allievo" : "home"}"><span aria-hidden="true">←</span> Indietro</button>
           <p class="eyebrow">Il tuo spazio in Opificio Vocale</p>
           <h1 id="path-title">Il mio<br>percorso.</h1>
-          <p>Ciao ${escapeHTML(student.nome)}. Qui ritrovi ciò che Riccardo ha scelto di condividere con te.</p>
-          ${profile?.role !== "admin" ? '<button class="student-signout" type="button" data-studio-signout>Esci</button>' : ""}
+          <p class="student-path-intro">Ciao ${escapeHTML(student.nome)}. Qui ritrovi ciò che Riccardo ha scelto di condividere con te.</p>
+          ${profile?.role === "admin" ? `
+            <div class="student-preview-picker">
+              <label for="studio-preview-student">Scegli allievo</label>
+              <select id="studio-preview-student" data-studio-preview-student aria-label="Scegli quale vista allievo visualizzare">
+                ${previewStudents.map(item => `
+                  <option value="${item.id}" ${item.id === studentId ? "selected" : ""}>
+                    ${escapeHTML([item.nome, item.cognome].filter(Boolean).join(" "))}${item.attivo ? "" : " · in pausa"}
+                  </option>
+                `).join("")}
+              </select>
+              <small>Stai visualizzando: <strong>${escapeHTML([student.nome, student.cognome].filter(Boolean).join(" "))}</strong></small>
+            </div>
+          ` : '<button class="student-signout" type="button" data-studio-signout>Esci</button>'}
         </header>
 
         <section class="path-stack">
@@ -842,6 +871,13 @@
 
 
   document.addEventListener("change", event => {
+    const previewSelect = event.target.closest("[data-studio-preview-student]");
+    if (previewSelect) {
+      setSelectedStudentId(previewSelect.value);
+      renderStudio();
+      return;
+    }
+
     const studentSelect = event.target.closest('[data-studio-lesson-form] select[name="student_id"]');
     if (!studentSelect) return;
     const form = studentSelect.closest("[data-studio-lesson-form]");
