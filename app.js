@@ -253,7 +253,7 @@ async function loadCommunications() {
 }
 
 function requestedRoute() {
-  return location.hash.slice(1);
+  return location.hash.slice(1).split("?")[0];
 }
 
 function latestManifesto() {
@@ -828,7 +828,7 @@ const pages = {
     </section>`
 };
 
-const STUDIO_ROUTE_NAMES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso"]);
+const STUDIO_ROUTE_NAMES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso", "reset-demo"]);
 
 function currentRoute() {
   const route = requestedRoute();
@@ -936,7 +936,8 @@ function render({ focus = false } = {}) {
     "studio-allievi": "Allievi · Studio · Opificio Vocale",
     "studio-allievo": "Scheda allievo · Studio · Opificio Vocale",
     "studio-lezione": "Nuova lezione · Studio · Opificio Vocale",
-    percorso: "Il mio percorso · Opificio Vocale"
+    percorso: "Il mio percorso · Opificio Vocale",
+    "reset-demo": "Test Reset Vocale · Studio · Opificio Vocale"
   };
   document.title = titles[route] || `${importedManifesto?.title || "Manifesti"} · Opificio Vocale`;
   const activeRoute = studioRoute ? "studio" : route.startsWith("manifesto-") ? "manifesti" : route;
@@ -1195,7 +1196,7 @@ if ("serviceWorker" in navigator) {
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./sw.js?v=32");
+      const registration = await navigator.serviceWorker.register("./sw.js?v=33");
       await registration.update();
     } catch {}
   });
