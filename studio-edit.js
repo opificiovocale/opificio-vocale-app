@@ -17,6 +17,7 @@
     return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
   };
   const selectedStudentId = () => { try { return localStorage.getItem(key) || ""; } catch { return ""; } };
+  let editorLoading = false;
   const setMessage = (form, message, error=false) => {
     const el = form.querySelector("[data-edit-status]");
     if (!el) return;
@@ -32,16 +33,18 @@
   async function injectEditor() {
     if ((location.hash || "").split("?")[0] !== "#studio-allievo") return;
     if (document.querySelector("[data-studio-edit-hub]")) return;
+    if (editorLoading) return;
     if (!document.querySelector(".studio-summary-grid")) return;
     const studentId = selectedStudentId();
     if (!studentId) return;
 
+    editorLoading = true;
     const [studentRes, packageRes, lessonRes] = await Promise.all([
       client.from("students").select("*").eq("id", studentId).single(),
       client.from("packages").select("*").eq("student_id", studentId).order("created_at", { ascending:false }),
       client.from("lessons").select("*").eq("student_id", studentId).order("data_ora", { ascending:false }).limit(30)
     ]);
-    if (studentRes.error) return;
+    if (studentRes.error) { editorLoading = false; return; }
     const student = studentRes.data;
     const packages = packageRes.data || [];
     const lessons = lessonRes.data || [];
@@ -165,7 +168,15 @@
     }).join("") : '<p class="studio-helper">Nessuna lezione ancora registrata.</p>';
 
     const summary = document.querySelector(".studio-summary-grid");
-    if (summary) summary.insertAdjacentElement("afterend", section);
+    if (
+      summary &&
+      (location.hash || "").split("?")[0] === "#studio-allievo" &&
+      selectedStudentId() === studentId &&
+      !document.querySelector("[data-studio-edit-hub]")
+    ) {
+      summary.insertAdjacentElement("afterend", section);
+    }
+    editorLoading = false;
   }
 
   document.addEventListener("click", async event => {
