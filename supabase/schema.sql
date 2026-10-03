@@ -17,7 +17,7 @@ create table if not exists public.students (
   updated_at timestamptz not null default now()
 );
 
-create unique index if not exists students_email_unique
+alter table public.students\n  add column if not exists data_nascita date;\n\ncreate unique index if not exists students_email_unique
   on public.students (lower(email));
 
 create table if not exists public.student_private_notes (
