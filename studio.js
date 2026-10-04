@@ -562,7 +562,22 @@
     const latest = lessons[0];
     const resetPackage = packages.find(item => isResetPackage(item) && item.stato === "attivo")
       || packages.find(item => isResetPackage(item) && item.stato === "completato");
-    if (resetPackage) return resetStudentMarkup(student, resetPackage, previewStudents);
+    // Un Reset completato resta riascoltabile anche se un altro percorso è attivo.
+    if (resetPackage && !displayPackages.some(pkg => pkg.id === resetPackage.id)) {
+      displayPackages.push(resetPackage);
+    }
+    if (displayPackages.length === 1 && displayPackages[0].id === resetPackage?.id) {
+      return resetStudentMarkup(student, resetPackage, previewStudents);
+    }
+
+    const resetSections = await Promise.all(displayPackages
+      .filter(pkg => isResetPackage(pkg) && ["attivo", "completato"].includes(pkg.stato))
+      .map(async pkg => resetUnlockedDay(pkg) ? `
+        <section class="studio-section" aria-label="Giorni di Reset Vocale">
+          <p class="content-kicker"><span>Reset Vocale</span></p>
+          <h2>I tuoi giorni.</h2>
+          ${await resetDaysMarkup(pkg)}
+        </section>` : ""));
 
     const linkButton = (url, label) => {
       const safe = safeUrl(url);
@@ -587,13 +602,13 @@
             </div>
           ` : '<button class="student-signout" type="button" data-studio-signout>Esci</button>'}
           <p class="eyebrow">Il tuo spazio in Opificio Vocale</p>
-          <h1 id="path-title">Il mio<br>percorso.</h1>
+          <h1 id="path-title">${displayPackages.length > 1 ? "I miei<br>percorsi." : "Il mio<br>percorso."}</h1>
           <p class="student-path-intro">Ciao ${escapeHTML(student.nome)}. Qui ritrovi ciò che Riccardo ha scelto di condividere con te.</p>
 
         </header>
 
         <section class="path-stack">
-          ${displayPackages.length ? displayPackages.map(pkg => `
+          ${displayPackages.length ? displayPackages.map(pkg => isResetPackage(pkg) && ["attivo", "completato"].includes(pkg.stato) ? resetProgressMarkup(pkg) : `
             <article class="path-card">
               <small>${pkg.stato === "completato" ? "Percorso completato" : pkg.stato === "sospeso" ? "Percorso in pausa" : "Percorso attivo"}</small>
               <strong>${escapeHTML(pkg.nome_percorso || "Percorso individuale")}</strong>
@@ -637,6 +652,8 @@
               <p>Quando una lezione verrà condivisa, comparirà qui.</p>
             </article>`}
         </section>
+
+        ${resetSections.join("")}
 
         <section class="studio-section">
           <p class="content-kicker"><span>Storico</span></p>
@@ -725,9 +742,24 @@
     </section>`;
   };
 
-  const resetStudentMarkup = async (student, pkg, previewStudents) => {
+  const resetProgressMarkup = pkg => {
     const day = resetUnlockedDay(pkg);
-    const audios = await getResetAudio(day);
+    return `<article class="path-card reset-progress-card"><small>Reset Vocale${pkg.stato === "completato" ? " · Percorso completato" : ""}</small>
+      <strong>${day ? `Giorno ${day} di 7` : "Ci siamo quasi."}</strong>
+      <p>${day ? "I giorni già sbloccati restano disponibili per riascoltarli." : `Il percorso inizia il ${escapeHTML(formatDate(resetStartDate(pkg)))}.`}</p>
+      <div class="reset-progress-track" aria-label="${day} giorni sbloccati su 7"><span style="width:${Math.round(day / 7 * 100)}%"></span></div>
+    </article>`;
+  };
+
+  const resetDaysMarkup = async pkg => {
+    const day = resetUnlockedDay(pkg);
+    if (!day) return "";
+    let audios;
+    try {
+      audios = await getResetAudio(day);
+    } catch {
+      return '<article class="path-card"><small>Reset Vocale</small><p class="reset-audio-pending">Audio temporaneamente non disponibili. Riapri il percorso per riprovare.</p></article>';
+    }
     const cards = await Promise.all(Array.from({ length: day }, async (_, index) => {
       const number = day - index;
       const audio = audios.find(item => item.day === number);
@@ -736,6 +768,11 @@
         <strong>${escapeHTML(audio?.title || `Giorno ${number}`)}</strong>${await resetAudioMarkup(audio, number)}
       </article>`;
     }));
+    return cards.join("");
+  };
+
+  const resetStudentMarkup = async (student, pkg, previewStudents) => {
+    const cards = await resetDaysMarkup(pkg);
     return `<section class="page student-path-page reset-student-page" aria-labelledby="reset-path-title">
       <header class="student-path-hero">
         <button class="back-button" type="button" data-route="${profile?.role === "admin" ? "studio" : "home"}"><span aria-hidden="true">←</span> Indietro</button>
@@ -743,11 +780,7 @@
         <p class="eyebrow">Il tuo spazio in Opificio Vocale</p><h1 id="reset-path-title">Il tuo<br>Reset.</h1>
         <p class="student-path-intro">Ciao ${escapeHTML(student.nome)}. Un giorno alla volta, con la tua voce.</p>
       </header><section class="path-stack">
-        <article class="path-card reset-progress-card"><small>Reset Vocale</small>
-          <strong>${day ? `Giorno ${day} di 7` : "Ci siamo quasi."}</strong>
-          <p>${day ? "I giorni già sbloccati restano disponibili per riascoltarli." : `Il percorso inizia il ${escapeHTML(formatDate(resetStartDate(pkg)))}.`}</p>
-          <div class="reset-progress-track" aria-label="${day} giorni sbloccati su 7"><span style="width:${Math.round(day / 7 * 100)}%"></span></div>
-        </article>${cards.join("")}
+        ${resetProgressMarkup(pkg)}${cards}
       </section></section>`;
   };
 
