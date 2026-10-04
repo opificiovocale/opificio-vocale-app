@@ -3399,3 +3399,43 @@ body,
     padding-right: max(28px, calc((100% - 720px) / 2));
   }
 }
+
+/* Reset Vocale · caricamento e lettore audio */
+.reset-upload-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  padding: 20px;
+}
+.reset-upload-card { min-width: 0; }
+.reset-upload-card h2 {
+  margin: 8px 0 10px;
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 400;
+}
+.reset-file-name { overflow-wrap: anywhere; font-size: 12px; }
+.reset-upload-card .reset-upload-form {
+  margin: 20px 0 0;
+  padding: 0;
+  max-width: none;
+  background: transparent;
+}
+.reset-upload-form input[type="file"] {
+  width: 100%; min-width: 0; max-width: 100%;
+  padding: 10px; font-size: 12px;
+}
+.reset-upload-form input[type="file"]::file-selector-button {
+  margin-right: 10px; padding: 8px 10px;
+  border: 1px solid var(--ov-line-soft); border-radius: 8px;
+  background: var(--ov-sage-light); color: var(--ov-ink-soft);
+  font: inherit; cursor: pointer;
+}
+.reset-upload-form button:disabled { opacity: .55; cursor: wait; }
+.reset-player-wrap { margin-top: 18px; }
+.reset-player-label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; }
+.reset-player { display: block; width: 100%; max-width: 100%; }
+.reset-audio-pending { font-size: 13px; line-height: 1.5; }
+@media (min-width: 900px) {
+  .reset-upload-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 28px; }
+}

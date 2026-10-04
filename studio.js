@@ -4,7 +4,9 @@
   const config = window.OPIFICIO_STUDIO_CONFIG;
   const sdk = window.supabase;
   const app = document.querySelector("#app");
-  const STUDIO_ROUTES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso", "reset-demo"]);
+  const STUDIO_ROUTES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso", "reset-demo", "studio-reset"]);
+  const RESET_BUCKET = "reset-vocale";
+  const RESET_MAX_BYTES = 25 * 1024 * 1024;
   const isResetPackage = pkg => String(typeof pkg === "string" ? pkg : pkg?.nome_percorso || "").trim().toLowerCase() === "reset vocale";
   const packageUnit = pkg => isResetPackage(pkg) ? "giorni" : "incontri";
   const SELECTED_STUDENT_KEY = "opificio-studio-selected-student";
@@ -25,6 +27,7 @@
   let profile = null;
   let loading = false;
   let lastError = "";
+  let uploadingReset = false;
 
   const escapeHTML = value => String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -297,6 +300,9 @@
             <button class="studio-action-card" type="button" data-route="reset-demo">
               <span aria-hidden="true">◉</span><strong>Test Reset</strong><small>Simula i 7 giorni e gli sblocchi lato allievo.</small>
             </button>
+            <button class="studio-action-card" type="button" data-route="studio-reset">
+              <span aria-hidden="true">♫</span><strong>Audio Reset</strong><small>Carica gli MP3 dei sette giorni.</small>
+            </button>
           </div>
         </section>
       </section>`;
@@ -554,6 +560,9 @@
     const displayPackages = activePackages.length ? activePackages : packages.slice(0, 1);
     const lessons = lessonsRes.data || [];
     const latest = lessons[0];
+    const resetPackage = packages.find(item => isResetPackage(item) && item.stato === "attivo")
+      || packages.find(item => isResetPackage(item) && item.stato === "completato");
+    if (resetPackage) return resetStudentMarkup(student, resetPackage, previewStudents);
 
     const linkButton = (url, label) => {
       const safe = safeUrl(url);
@@ -661,31 +670,99 @@
   };
 
 
-  // Reset Vocale demo · solo docente, nessun dato reale
-  const resetDemoMarkup = () => {
+  const resetStartDate = pkg => pkg.data_inizio || new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit"
+  }).format(new Date(pkg.created_at));
+
+  const resetUnlockedDay = pkg => {
+    const today = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(new Date());
+    const elapsed = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${resetStartDate(pkg)}T00:00:00Z`)) / 86400000);
+    return Math.max(0, Math.min(7, elapsed + 1));
+  };
+
+  const getResetAudio = async (maxDay = 7) => {
+    const { data, error } = await client.from("reset_audio").select("*").lte("day", maxDay).order("day");
+    if (error) throw error;
+    return data || [];
+  };
+
+  const resetAudioMarkup = async (audio, day) => {
+    if (!audio) return '<p class="reset-audio-pending">Audio in preparazione.</p>';
+    const { data, error } = await client.storage.from(RESET_BUCKET).createSignedUrl(audio.storage_path, 3600);
+    const url = safeUrl(data?.signedUrl);
+    if (error || !url) return '<p class="reset-audio-pending">Audio temporaneamente non disponibile. Riapri il percorso per riprovare.</p>';
+    return `<div class="reset-player-wrap"><span class="reset-player-label">Ascolta il Giorno ${day}</span>
+      <audio class="reset-player" data-reset-player controls preload="none" aria-label="Ascolta il Giorno ${day}" src="${escapeHTML(url)}"></audio>
+    </div>`;
+  };
+
+  const resetAudioAdminMarkup = async () => {
+    const audios = await getResetAudio();
+    const cards = await Promise.all(Array.from({ length: 7 }, async (_, index) => {
+      const day = index + 1;
+      const audio = audios.find(item => item.day === day);
+      return `<article class="path-card reset-upload-card" data-reset-card="${day}">
+        <small>Giorno ${day}</small><h2>${escapeHTML(audio?.title || `Giorno ${day}`)}</h2>
+        ${audio ? `<p class="reset-file-name">${escapeHTML(audio.file_name)} · ${(audio.size_bytes / 1000000).toLocaleString("it-IT", { maximumFractionDigits: 1 })} MB</p>${await resetAudioMarkup(audio, day)}` : '<p class="reset-audio-pending">Nessun audio caricato.</p>'}
+        <form class="studio-form reset-upload-form" data-reset-upload="${day}" data-reset-old-path="${escapeHTML(audio?.storage_path || "")}">
+          <label><span>Titolo</span><input name="title" maxlength="160" value="${escapeHTML(audio?.title || `Giorno ${day}`)}" required></label>
+          <label><span>MP3 del Giorno ${day}</span><input type="file" name="audio" accept=".mp3,audio/mpeg,audio/mp3" required></label>
+          <button class="primary-button" type="submit">${audio ? "Sostituisci audio" : "Carica audio"}</button>
+          <p class="studio-status" data-reset-upload-status role="status" aria-live="polite"></p>
+        </form>
+      </article>`;
+    }));
+    return `<section class="page studio-page reset-upload-page" aria-labelledby="reset-upload-title">
+      <header class="studio-compact-header">
+        <button class="back-button" type="button" data-route="studio"><span aria-hidden="true">←</span> Studio</button>
+        <p class="eyebrow">Studio · Reset Vocale</p><h1 id="reset-upload-title">Audio Reset.</h1>
+        <p>Scegli il giorno, seleziona il suo MP3 e premi Carica audio. Ogni file è condiviso con tutte le persone iscritte al percorso.</p>
+        <p class="studio-helper">MP3 fino a 25 MB. Per l’allievo si sblocca un giorno alla volta, dalla data di inizio del suo Reset.</p>
+        <button class="studio-text-button" type="button" data-route="reset-demo">Apri Test Reset →</button>
+      </header><section class="reset-upload-grid">${cards.join("")}</section>
+    </section>`;
+  };
+
+  const resetStudentMarkup = async (student, pkg, previewStudents) => {
+    const day = resetUnlockedDay(pkg);
+    const audios = await getResetAudio(day);
+    const cards = await Promise.all(Array.from({ length: day }, async (_, index) => {
+      const number = day - index;
+      const audio = audios.find(item => item.day === number);
+      return `<article class="path-card reset-day-card ${number === day ? "is-current" : "is-past"}">
+        <small>${number === day ? "Oggi · " : ""}Giorno ${number}</small>
+        <strong>${escapeHTML(audio?.title || `Giorno ${number}`)}</strong>${await resetAudioMarkup(audio, number)}
+      </article>`;
+    }));
+    return `<section class="page student-path-page reset-student-page" aria-labelledby="reset-path-title">
+      <header class="student-path-hero">
+        <button class="back-button" type="button" data-route="${profile?.role === "admin" ? "studio" : "home"}"><span aria-hidden="true">←</span> Indietro</button>
+        ${profile?.role === "admin" ? `<div class="student-preview-picker"><label for="studio-preview-student">Scegli allievo</label><select id="studio-preview-student" data-studio-preview-student>${previewStudents.map(item => `<option value="${item.id}" ${item.id === student.id ? "selected" : ""}>${escapeHTML([item.nome, item.cognome].filter(Boolean).join(" "))}</option>`).join("")}</select></div>` : '<button class="student-signout" type="button" data-studio-signout>Esci</button>'}
+        <p class="eyebrow">Il tuo spazio in Opificio Vocale</p><h1 id="reset-path-title">Il tuo<br>Reset.</h1>
+        <p class="student-path-intro">Ciao ${escapeHTML(student.nome)}. Un giorno alla volta, con la tua voce.</p>
+      </header><section class="path-stack">
+        <article class="path-card reset-progress-card"><small>Reset Vocale</small>
+          <strong>${day ? `Giorno ${day} di 7` : "Ci siamo quasi."}</strong>
+          <p>${day ? "I giorni già sbloccati restano disponibili per riascoltarli." : `Il percorso inizia il ${escapeHTML(formatDate(resetStartDate(pkg)))}.`}</p>
+          <div class="reset-progress-track" aria-label="${day} giorni sbloccati su 7"><span style="width:${Math.round(day / 7 * 100)}%"></span></div>
+        </article>${cards.join("")}
+      </section></section>`;
+  };
+
+  // Anteprima docente: simula il giorno e ascolta gli audio caricati.
+  const resetDemoMarkup = async () => {
     if (profile?.role !== "admin") return errorMarkup("Questa anteprima è riservata al docente.");
 
-    const days = [
-      { title: "Partire da dove sei", practice: "Osservare e descrivere la voce di oggi, anche attraverso l’esplorazione della voce come oggetto." },
-      { title: "Altezza", practice: "Muovere la voce verso l’alto e verso il basso e notare che cosa cambia." },
-      { title: "Risonanza", practice: "Spostare la percezione del suono e osservare come cambia la voce." },
-      { title: "Peso", practice: "Esplorare una voce più leggera o più presente senza cercare un risultato giusto." },
-      { title: "Ritmo", practice: "Cambiare velocità, pause e intenzione per interrompere qualche automatismo." },
-      { title: "Possibilità", practice: "Combinare gli elementi esplorati e provare organizzazioni meno familiari." },
-      { title: "Scelta", practice: "Scegliere tra più possibilità vocali, invece di cercare una sola voce corretta." }
-    ];
+    const days = Array.from({ length: 7 });
 
     const params = new URLSearchParams((location.hash.split("?")[1] || ""));
     const requestedDay = Number(params.get("day")) || 1;
     const day = Math.min(7, Math.max(1, requestedDay));
-    const current = days[day - 1];
     const progress = Math.round((day / 7) * 100);
-
-    const audioButton = label => `
-      <button class="reset-audio-demo" type="button" disabled aria-disabled="true">
-        <span aria-hidden="true">▶</span>
-        <span><strong>${label}</strong><small>Audio non ancora caricato</small></span>
-      </button>`;
+    const audios = await getResetAudio(day);
+    const players = await Promise.all(Array.from({ length: day }, async (_, index) => resetAudioMarkup(audios.find(item => item.day === index + 1), index + 1)));
 
     return `
       <section class="page studio-page reset-demo-page" aria-labelledby="reset-demo-title">
@@ -694,6 +771,7 @@
           <p class="eyebrow">Studio · Anteprima privata</p>
           <h1 id="reset-demo-title">Test Reset.</h1>
           <p>Questa schermata serve solo a te: simula ciò che vedrebbe una persona iscritta a Reset Vocale.</p>
+          <button class="studio-text-button" type="button" data-route="studio-reset">Carica gli audio →</button>
 
           <div class="reset-demo-controls" aria-label="Simula giorno del percorso">
             <small>Simula il giorno</small>
@@ -717,9 +795,8 @@
 
           <article class="path-card reset-day-card is-current">
             <small>Oggi · Giorno ${day}</small>
-            <strong>${escapeHTML(current.title)}</strong>
-            <p>${escapeHTML(current.practice)}</p>
-            ${audioButton(`Ascolta il Giorno ${day}`)}
+            <strong>${escapeHTML(audios.find(item => item.day === day)?.title || `Giorno ${day}`)}</strong>
+            ${players[day - 1]}
           </article>
 
           ${day > 1 ? `
@@ -730,21 +807,22 @@
                 ${days.slice(0, day - 1).map((item, index) => `
                   <article class="path-card reset-day-card is-past">
                     <small>Giorno ${index + 1}</small>
-                    <strong>${escapeHTML(item.title)}</strong>
-                    ${audioButton(`Riascolta il Giorno ${index + 1}`)}
+                    <strong>${escapeHTML(audios.find(audio => audio.day === index + 1)?.title || `Giorno ${index + 1}`)}</strong>
+                    ${players[index]}
                   </article>
                 `).join("")}
               </div>
             </section>
           ` : ""}
 
-          <p class="reset-demo-note">I giorni futuri non compaiono. Nell’app reale verranno sbloccati automaticamente, uno al giorno.</p>
+          <p class="reset-demo-note">I giorni futuri non compaiono. Per ogni allievo vengono sbloccati automaticamente dalla data di inizio del percorso.</p>
         </section>
       </section>`;
   };
 
   const renderStudio = async () => {
     if (!isStudioRoute()) return;
+    if (uploadingReset) return;
     if (loading) { app.innerHTML = loadingMarkup(); return; }
     loading = true;
     app.innerHTML = loadingMarkup();
@@ -778,7 +856,8 @@
       else if (route === "studio-allievo") app.innerHTML = await studentDetailMarkup(getSelectedStudentId());
       else if (route === "studio-lezione") app.innerHTML = await lessonFormMarkup();
       else if (route === "percorso") app.innerHTML = await studentPathMarkup();
-      else if (route === "reset-demo") app.innerHTML = resetDemoMarkup();
+      else if (route === "reset-demo") app.innerHTML = await resetDemoMarkup();
+      else if (route === "studio-reset") app.innerHTML = await resetAudioAdminMarkup();
     } catch (error) {
       lastError = error?.message || "Errore inatteso.";
       app.innerHTML = errorMarkup(lastError);
@@ -935,6 +1014,56 @@
   });
 
   document.addEventListener("submit", async event => {
+    const resetForm = event.target.closest("[data-reset-upload]");
+    if (resetForm) {
+      event.preventDefault();
+      if (uploadingReset || profile?.role !== "admin") return;
+      const day = Number(resetForm.dataset.resetUpload);
+      const file = resetForm.elements.audio.files[0];
+      const title = resetForm.elements.title.value.trim();
+      const status = resetForm.querySelector("[data-reset-upload-status]");
+      const buttons = [...document.querySelectorAll("[data-reset-upload] button")];
+      const report = (message, tone) => { status.textContent = message; status.dataset.tone = tone || ""; };
+      if (!Number.isInteger(day) || day < 1 || day > 7) return;
+      if (!file || !/\.mp3$/i.test(file.name) || (file.type && !["audio/mpeg", "audio/mp3", "audio/x-mp3", "audio/mpeg3", "audio/x-mpeg-3", "application/octet-stream"].includes(file.type))) {
+        report("Scegli un file MP3.", "error"); return;
+      }
+      if (!file.size || file.size > RESET_MAX_BYTES) { report("Il file deve contenere audio e non superare 25 MB.", "error"); return; }
+      if (!title || title.length > 160) { report("Inserisci un titolo fino a 160 caratteri.", "error"); return; }
+      const path = `giorno-${day}/${crypto.randomUUID()}.mp3`;
+      const oldPath = resetForm.dataset.resetOldPath;
+      let uploaded = false;
+      let saved = false;
+      uploadingReset = true;
+      buttons.forEach(button => { button.disabled = true; });
+      report("Caricamento in corso…");
+      try {
+        const { error: uploadError } = await client.storage.from(RESET_BUCKET).upload(path, file, { contentType: "audio/mpeg", cacheControl: "3600", upsert: false });
+        if (uploadError) throw uploadError;
+        uploaded = true;
+        const { error: saveError } = await client.from("reset_audio").upsert({ day, title, storage_path: path, file_name: file.name.slice(0, 240), size_bytes: file.size, updated_at: new Date().toISOString() }, { onConflict: "day" });
+        if (saveError) throw saveError;
+        saved = true;
+        if (oldPath && oldPath !== path) await client.storage.from(RESET_BUCKET).remove([oldPath]);
+        uploadingReset = false;
+        if (currentRoute() === "studio-reset") {
+          await renderStudio();
+          const success = document.querySelector(`[data-reset-card="${day}"] [data-reset-upload-status]`);
+          if (success) { success.textContent = `Audio del Giorno ${day} caricato.`; success.dataset.tone = "success"; }
+        }
+      } catch (error) {
+        if (uploaded && !saved) {
+          try { await client.storage.from(RESET_BUCKET).remove([path]); } catch {}
+        }
+        report(saved ? "Audio salvato. Riapri Audio Reset per ascoltarlo." : `Caricamento non riuscito: ${error?.message || "riprova."}`, saved ? "success" : "error");
+      } finally {
+        uploadingReset = false;
+        buttons.forEach(button => { button.disabled = false; });
+        if (currentRoute() !== "studio-reset" && isStudioRoute()) renderStudio();
+      }
+      return;
+    }
+
     const loginForm = event.target.closest("[data-studio-login]");
     if (loginForm) {
       event.preventDefault();
@@ -1069,6 +1198,13 @@
         button.disabled = false;
       }
     }
+  }, true);
+
+  document.addEventListener("play", event => {
+    if (!event.target.matches?.("[data-reset-player]")) return;
+    document.querySelectorAll("[data-reset-player]").forEach(player => {
+      if (player !== event.target) player.pause();
+    });
   }, true);
 
   init();

@@ -43,6 +43,11 @@ function boot(hash = '', diary = []) {
 }
 const item = { id:'ml-2', number:'02', title:'Un testo di prova', date:'2026-09-03', excerpt:'Un testo da leggere', bodyText:'Il testo completo del Manifesto.' };
 
+test('Il collegamento diretto ad Audio Reset resta nello Studio', () => {
+  const app = boot('#studio-reset');
+  assert.equal(app.run('currentRoute()'), 'studio-reset');
+});
+
 test('I collegamenti audio importati sono cliccabili e il testo HTML resta innocuo', () => {
   const app = boot();
   const rendered = app.run(`bodyTextMarkup('https://on.soundcloud.com/audio\\n\\nAscolta https://example.test/?a=1&b=2. <script>alert(1)</script> javascript:alert(1)')`);

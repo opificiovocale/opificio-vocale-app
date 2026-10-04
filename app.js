@@ -828,7 +828,7 @@ const pages = {
     </section>`
 };
 
-const STUDIO_ROUTE_NAMES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso", "reset-demo"]);
+const STUDIO_ROUTE_NAMES = new Set(["studio", "studio-allievi", "studio-allievo", "studio-lezione", "percorso", "reset-demo", "studio-reset"]);
 
 function currentRoute() {
   const route = requestedRoute();
@@ -937,7 +937,8 @@ function render({ focus = false } = {}) {
     "studio-allievo": "Scheda allievo · Studio · Opificio Vocale",
     "studio-lezione": "Nuova lezione · Studio · Opificio Vocale",
     percorso: "Il mio percorso · Opificio Vocale",
-    "reset-demo": "Test Reset Vocale · Studio · Opificio Vocale"
+    "reset-demo": "Test Reset Vocale · Studio · Opificio Vocale",
+    "studio-reset": "Audio Reset · Studio · Opificio Vocale"
   };
   document.title = titles[route] || `${importedManifesto?.title || "Manifesti"} · Opificio Vocale`;
   const activeRoute = studioRoute ? "studio" : route.startsWith("manifesto-") ? "manifesti" : route;

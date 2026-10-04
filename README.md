@@ -21,6 +21,11 @@ L’area docente permette di:
 - conservare note private separate dai contenuti visibili all’allievo;
 - collegare registrazioni, trascrizioni e materiali su Google Drive;
 - vedere l’anteprima dell’area allievo.
+- caricare e sostituire gli MP3 dei sette giorni in **Studio → Audio Reset**, condivisi tra gli iscritti a Reset Vocale.
+
+Gli audio Reset sono conservati nel bucket privato `reset-vocale`. La vista allievo e le policy del database sbloccano un giorno alla volta dalla `data_inizio` del percorso, usando il calendario di Roma. Se la data è assente, vale il giorno di creazione. Un percorso sospeso non dà accesso; i giorni già disponibili restano riascoltabili. L’anteprima **Test Reset** usa gli stessi file.
+
+Per un nuovo progetto Supabase, applicare `supabase/reset-audio.sql` dopo `supabase/schema.sql`.
 
 L’area allievo mostra esclusivamente i dati associati al proprio account e le lezioni marcate come visibili. Le note private docente non sono esposte.
 
