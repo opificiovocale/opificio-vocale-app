@@ -8,6 +8,7 @@
   const client = sdk.createClient(config.supabaseUrl, config.supabasePublishableKey, {
     auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
   });
+  const school = window.OPIFICIO_STUDIO_SCHOOL;
   const key = "opificio-studio-selected-student";
   const esc = value => String(value ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   const dt = value => {
@@ -42,10 +43,11 @@
     const [studentRes, packageRes, lessonRes] = await Promise.all([
       client.from("students").select("*").eq("id", studentId).single(),
       client.from("packages").select("*").eq("student_id", studentId).order("created_at", { ascending:false }),
-      client.from("lessons").select("*").eq("student_id", studentId).order("data_ora", { ascending:false }).limit(30)
+      client.from("lessons").select("*").eq("student_id", studentId).order("data_ora", { ascending:false })
     ]);
     if (studentRes.error) { editorLoading = false; return; }
     const student = studentRes.data;
+    const diapason = school.isDiapason(student);
     const packages = packageRes.data || [];
     const lessons = lessonRes.data || [];
     const lessonNoteMap = new Map();
@@ -74,12 +76,13 @@
           '<label><span>Email</span><input type="email" name="email" value="'+esc(student.email)+'" required></label>' +
           '<label><span>Telefono</span><input type="tel" name="telefono" value="'+esc(student.telefono)+'"></label>' +
           '<label><span>Data di nascita</span><input type="date" name="data_nascita" autocomplete="bday" value="'+esc(student.data_nascita)+'"></label>' +
+          school.schoolConfigMarkup(student) +
           '<label class="studio-check"><input type="checkbox" name="attivo" '+(student.attivo ? "checked" : "")+'> <span>Allievo attivo</span></label>' +
           '<button class="primary-button" type="submit">Salva dati allievo</button>' +
           '<p class="studio-status" data-edit-status role="status"></p>' +
         '</form>' +
       '</details>' +
-      '<details class="studio-inline-panel">' +
+      '<details class="studio-inline-panel" '+(diapason ? 'hidden style="display:none"' : '')+'>' +
         '<summary>Percorsi · '+packages.length+'</summary>' +
         '<div data-edit-packages></div>' +
       '</details>' +
@@ -138,7 +141,7 @@
             '<button class="studio-row-delete" type="button" data-request-delete-lesson="'+esc(lesson.id)+'" data-lesson-label="'+label+' · '+focus+'">Elimina</button>' +
           '</div>' +
         '</div>' +
-        '<form class="studio-form studio-inline-form studio-lesson-edit-form" data-edit-lesson hidden>' +
+        '<form class="studio-form studio-inline-form studio-lesson-edit-form" data-edit-lesson data-diapason="'+diapason+'" hidden>' +
           '<input type="hidden" name="lesson_id" value="'+esc(lesson.id)+'">' +
           '<div class="studio-form-row">' +
             '<label><span>Data e ora</span><input type="datetime-local" name="data_ora" value="'+esc(dt(lesson.data_ora))+'" required></label>' +
@@ -150,13 +153,13 @@
             '<option value="recupero" '+(lesson.stato==="recupero"?"selected":"")+'>Recupero</option>' +
             '<option value="annullata" '+(lesson.stato==="annullata"?"selected":"")+'>Annullata</option>' +
           '</select></label>' +
-          '<label><span>Focus / argomenti</span><input name="focus" value="'+esc(lesson.focus)+'"></label>' +
-          '<label class="private-field"><span>Note private · solo docente</span><textarea rows="4" name="note_private">'+esc(lessonNoteMap.get(lesson.id) || "")+'</textarea></label>' +
-          '<label><span>Riepilogo / note per l’allievo</span><textarea rows="4" name="riepilogo_allievo">'+esc(lesson.riepilogo_allievo)+'</textarea></label>' +
-          '<label><span>Da fare / esercizi</span><textarea rows="3" name="esercizi">'+esc(lesson.esercizi)+'</textarea></label>' +
-          '<label><span>Registrazione Drive</span><input type="url" name="recording_url" value="'+esc(lesson.recording_url)+'"></label>' +
-          '<label><span>Trascrizione</span><input type="url" name="transcript_url" value="'+esc(lesson.transcript_url)+'"></label>' +
-          '<label><span>Materiali</span><input type="url" name="materials_url" value="'+esc(lesson.materials_url)+'"></label>' +
+          '<label data-private-lesson-field><span>Focus / argomenti</span><input name="focus" value="'+esc(lesson.focus)+'"></label>' +
+          '<label class="private-field" data-private-lesson-field><span>Note private · solo docente</span><textarea rows="4" name="note_private">'+esc(lessonNoteMap.get(lesson.id) || "")+'</textarea></label>' +
+          '<label><span>'+(diapason ? 'Note per l’allievo' : 'Riepilogo / note per l’allievo')+'</span><textarea rows="6" name="riepilogo_allievo">'+esc(diapason ? school.schoolSharedText(lesson) : lesson.riepilogo_allievo)+'</textarea></label>' +
+          '<label data-private-lesson-field><span>Da fare / esercizi</span><textarea rows="3" name="esercizi">'+esc(lesson.esercizi)+'</textarea></label>' +
+          '<label data-private-lesson-field><span>Registrazione Drive</span><input type="url" name="recording_url" value="'+esc(lesson.recording_url)+'"></label>' +
+          '<label data-private-lesson-field><span>Trascrizione</span><input type="url" name="transcript_url" value="'+esc(lesson.transcript_url)+'"></label>' +
+          '<label data-private-lesson-field><span>Materiali</span><input type="url" name="materials_url" value="'+esc(lesson.materials_url)+'"></label>' +
           '<label class="studio-check"><input type="checkbox" name="visible_to_student" '+(lesson.visible_to_student ? "checked" : "")+'> <span>Visibile all’allievo</span></label>' +
           '<div class="studio-edit-actions">' +
             '<button class="primary-button" type="submit">Salva modifiche</button>' +
@@ -262,7 +265,8 @@
         email: studentForm.elements.email.value.trim().toLowerCase(),
         telefono: studentForm.elements.telefono.value.trim() || null,
         data_nascita: studentForm.elements.data_nascita.value || null,
-        attivo: studentForm.elements.attivo.checked
+        attivo: studentForm.elements.attivo.checked,
+        ...school.schoolConfigPayload(studentForm)
       };
       const res = await client.from("students").update(payload).eq("id", studentForm.elements.student_id.value);
       if (res.error) return setMessage(studentForm, res.error.message, true);
@@ -287,17 +291,18 @@
     }
 
     if (lessonForm) {
+      const diapason = lessonForm.dataset.diapason === "true";
       setMessage(lessonForm, "Salvo…");
       const payload = {
         data_ora: new Date(lessonForm.elements.data_ora.value).toISOString(),
         durata_minuti: Number(lessonForm.elements.durata_minuti.value),
         stato: lessonForm.elements.stato.value,
-        focus: lessonForm.elements.focus.value.trim() || null,
+        focus: diapason ? null : lessonForm.elements.focus.value.trim() || null,
         riepilogo_allievo: lessonForm.elements.riepilogo_allievo.value.trim() || null,
-        esercizi: lessonForm.elements.esercizi.value.trim() || null,
-        recording_url: lessonForm.elements.recording_url.value.trim() || null,
-        transcript_url: lessonForm.elements.transcript_url.value.trim() || null,
-        materials_url: lessonForm.elements.materials_url.value.trim() || null,
+        esercizi: diapason ? null : lessonForm.elements.esercizi.value.trim() || null,
+        recording_url: diapason ? null : lessonForm.elements.recording_url.value.trim() || null,
+        transcript_url: diapason ? null : lessonForm.elements.transcript_url.value.trim() || null,
+        materials_url: diapason ? null : lessonForm.elements.materials_url.value.trim() || null,
         visible_to_student: lessonForm.elements.visible_to_student.checked
       };
       const { error } = await client.rpc("update_studio_lesson", {

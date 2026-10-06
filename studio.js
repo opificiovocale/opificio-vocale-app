@@ -48,6 +48,69 @@
     }
   };
 
+  const SCHOOL_DAYS = ["", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"];
+  const isDiapason = student => student?.tipo_studio === "diapason";
+  const isDiapasonName = value => /^diapason\b/i.test(String(value || "").trim());
+  const schoolSchedule = student => {
+    const day = SCHOOL_DAYS[Number(student?.giorno_lezione)];
+    const time = String(student?.ora_lezione || "").slice(0, 5);
+    return day && /^\d{2}:\d{2}$/.test(time) ? `${day} · ore ${time}` : "Orario da definire";
+  };
+  const schoolConfigMarkup = (student = {}) => `
+    <label><span>Percorso dell’allievo</span><select name="tipo_studio" data-school-type>
+      <option value="privato" ${!isDiapason(student) ? "selected" : ""}>Opificio Vocale · privato</option>
+      <option value="diapason" ${isDiapason(student) ? "selected" : ""}>Diapason · Canto</option>
+    </select></label>
+    <div class="studio-form-row" data-school-schedule ${isDiapason(student) ? "" : 'hidden style="display:none"'}>
+      <label><span>Giorno fisso</span><select name="giorno_lezione">
+        <option value="">Da definire</option>
+        ${SCHOOL_DAYS.slice(1).map((day, index) => `<option value="${index + 1}" ${Number(student.giorno_lezione) === index + 1 ? "selected" : ""}>${day}</option>`).join("")}
+      </select></label>
+      <label><span>Ora</span><input type="time" name="ora_lezione" step="60" value="${escapeHTML(String(student.ora_lezione || "").slice(0, 5))}"></label>
+    </div>`;
+  const schoolConfigPayload = form => ({
+    tipo_studio: form.elements.tipo_studio.value,
+    giorno_lezione: form.elements.giorno_lezione.value ? Number(form.elements.giorno_lezione.value) : null,
+    ora_lezione: form.elements.ora_lezione.value || null
+  });
+  const syncSchoolConfig = form => {
+    const fields = form.querySelector("[data-school-schedule]");
+    if (!fields) return;
+    const school = form.elements.tipo_studio.value === "diapason";
+    fields.hidden = !school;
+    fields.style.display = school ? "" : "none";
+    form.elements.giorno_lezione.required = school && Boolean(form.elements.ora_lezione.value);
+    form.elements.ora_lezione.required = school && Boolean(form.elements.giorno_lezione.value);
+  };
+  const schoolSharedText = lesson => [...new Set([
+    lesson.focus, lesson.riepilogo_allievo, lesson.esercizi,
+    lesson.recording_url, lesson.transcript_url, lesson.materials_url
+  ].map(value => String(value || "").trim()).filter(Boolean))].join("\n\n");
+  const schoolNoteHTML = value => {
+    const text = String(value || "");
+    let html = "", offset = 0;
+    for (const match of text.matchAll(/https?:\/\/[^\s<>"']+/g)) {
+      const candidate = match[0].replace(/[.,;!?)\]]+$/, "");
+      const url = safeUrl(candidate);
+      html += escapeHTML(text.slice(offset, match.index));
+      html += url ? `<a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(candidate)}</a>` : escapeHTML(candidate);
+      offset = match.index + candidate.length;
+    }
+    return html + escapeHTML(text.slice(offset));
+  };
+  const schoolLessonCards = lessons => lessons.map(lesson => `
+    <details class="student-lesson-item school-lesson-item">
+      <summary>
+        <time>${escapeHTML(formatDate(lesson.data_ora))}</time>
+        <span class="student-lesson-heading"><strong>${escapeHTML(({ presente: "Presente", assente: "Assente", recupero: "Recupero", annullata: "Annullata" })[lesson.stato] || "Incontro")}</strong><small>Apri le note della lezione</small></span>
+        <span class="student-lesson-toggle" aria-hidden="true">＋</span>
+      </summary>
+      <div class="student-lesson-body"><p class="school-shared-note">${schoolNoteHTML(schoolSharedText(lesson)) || "Nessuna nota inserita."}</p></div>
+    </details>`).join("") || '<div class="studio-empty"><p>Ancora nessun incontro condiviso.</p></div>';
+
+  // Shared with the existing teacher editor; no private notes enter the public text.
+  window.OPIFICIO_STUDIO_SCHOOL = { isDiapason, schoolSchedule, schoolConfigMarkup, schoolConfigPayload, schoolSharedText };
+
   const formatDate = value => {
     if (!value) return "—";
     return new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value));
@@ -310,7 +373,7 @@
 
   const studentsMarkup = async () => {
     const { data, error } = await client.from("students")
-      .select("id,nome,cognome,email,data_nascita,attivo,packages(id,nome_percorso,incontri_totali,incontri_usati,stato)")
+      .select("id,nome,cognome,email,data_nascita,attivo,tipo_studio,giorno_lezione,ora_lezione,packages(id,nome_percorso,incontri_totali,incontri_usati,stato)")
       .order("nome");
     if (error) throw error;
     const students = data || [];
@@ -334,7 +397,7 @@
                 <span>
                   <small>${escapeHTML([
                     age !== null ? `${age} anni` : "",
-                    activePackage ? `${activePackage.nome_percorso} · ${activePackage.incontri_usati}/${activePackage.incontri_totali}` : "Nessun percorso attivo",
+                    isDiapason(student) ? `Diapason · ${schoolSchedule(student)}` : activePackage ? `${activePackage.nome_percorso} · ${activePackage.incontri_usati}/${activePackage.incontri_totali}` : "Nessun percorso attivo",
                     student.attivo ? "scheda attiva" : "scheda in pausa"
                   ].filter(Boolean).join(" · "))}</small>
                   <strong>${escapeHTML([student.nome, student.cognome].filter(Boolean).join(" "))}</strong>
@@ -354,6 +417,7 @@
               <label><span>Email</span><input type="email" name="email" required autocomplete="email"></label>
               <label><span>Telefono</span><input type="tel" name="telefono" autocomplete="tel"></label>
               <label><span>Data di nascita</span><input type="date" name="data_nascita" autocomplete="bday"></label>
+              ${schoolConfigMarkup()}
               <button class="primary-button" type="submit">Crea scheda</button>
               <p class="studio-status" data-studio-status role="status"></p>
             </form>
@@ -375,12 +439,13 @@
     const [studentRes, packagesRes, lessonsRes, noteRes] = await Promise.all([
       client.from("students").select("*").eq("id", studentId).single(),
       client.from("packages").select("*").eq("student_id", studentId).order("created_at", { ascending: false }),
-      client.from("lessons").select("*").eq("student_id", studentId).order("data_ora", { ascending: false }).limit(20),
+      client.from("lessons").select("*").eq("student_id", studentId).order("data_ora", { ascending: false }),
       client.from("student_private_notes").select("note").eq("student_id", studentId).maybeSingle()
     ]);
     if (studentRes.error) throw studentRes.error;
 
     const student = studentRes.data;
+    const diapason = isDiapason(student);
     const packages = packagesRes.data || [];
     const lessons = lessonsRes.data || [];
     const activePackage = packages.find(p => p.stato === "attivo");
@@ -401,12 +466,15 @@
         </header>
 
         <section class="studio-summary-grid">
+          ${diapason ? `
+          <article class="studio-stat"><small>Percorso</small><strong>Diapason</strong><span>Canto</span></article>
+          <article class="studio-stat"><small>Orario settimanale</small><strong>${escapeHTML(schoolSchedule(student))}</strong><span>Modificabile in Dati allievo</span></article>` : `
           <article class="studio-stat"><small>Percorso</small><strong>${escapeHTML(activePackage?.nome_percorso || "—")}</strong><span>${activePackage ? `${activePackage.incontri_usati} di ${activePackage.incontri_totali}` : "nessuno attivo"}</span></article>
           <article class="studio-stat"><small>Residue</small><strong>${activePackage ? Math.max(0, activePackage.incontri_totali - activePackage.incontri_usati) : "—"}</strong><span>lezioni</span></article>
-          <article class="studio-stat"><small>Ultima</small><strong>${latest ? escapeHTML(formatDate(latest.data_ora).split(" ")[0]) : "—"}</strong><span>${latest ? escapeHTML(formatDate(latest.data_ora).split(" ").slice(1).join(" ")) : "nessuna"}</span></article>
+          <article class="studio-stat"><small>Ultima</small><strong>${latest ? escapeHTML(formatDate(latest.data_ora).split(" ")[0]) : "—"}</strong><span>${latest ? escapeHTML(formatDate(latest.data_ora).split(" ").slice(1).join(" ")) : "nessuna"}</span></article>`}
         </section>
 
-        <section class="studio-section">
+        ${diapason ? "" : `<section class="studio-section">
           <p class="content-kicker"><span>Note private</span> · Solo docente</p>
           <form class="studio-form studio-inline-form private-field" data-studio-student-note>
             <input type="hidden" name="student_id" value="${student.id}">
@@ -435,6 +503,7 @@
               <datalist id="studio-package-names">
                 <option value="Reset Vocale"></option>
                 <option value="Vocal Boom"></option>
+                <option value="Diapason"></option>
               </datalist>
               <label data-package-count-field><span>Numero incontri</span><input type="number" name="incontri_totali" min="1" max="100" value="4" required></label>
               <p class="studio-helper" data-reset-package-hint hidden>Reset Vocale dura 7 giorni: il totale è impostato automaticamente.</p>
@@ -442,14 +511,14 @@
               <p class="studio-status" data-studio-status role="status"></p>
             </form>
           </details>
-        </section>
+        </section>`}
 
         <section class="studio-section">
-          <p class="content-kicker"><span>Storico</span></p>
-          <h2>Lezioni.</h2>
+          <p class="content-kicker"><span>${diapason ? "Registro presenze" : "Storico"}</span></p>
+          <h2>${diapason ? "Incontri." : "Lezioni."}</h2>
           <button class="primary-button" type="button" data-studio-new-lesson="${student.id}">＋ Nuova lezione</button>
           <div class="lesson-history">
-            ${lessons.map(lesson => `
+            ${diapason ? schoolLessonCards(lessons) : lessons.map(lesson => `
               <div class="studio-data-row">
                 <time>${escapeHTML(formatDate(lesson.data_ora))}</time>
                 <span>
@@ -469,12 +538,13 @@
 
   const lessonFormMarkup = async () => {
     const [{ data: students, error }, { data: packages }] = await Promise.all([
-      client.from("students").select("id,nome,cognome").eq("attivo", true).order("nome"),
+      client.from("students").select("id,nome,cognome,tipo_studio").eq("attivo", true).order("nome"),
       client.from("packages").select("id,student_id,nome_percorso,incontri_totali,incontri_usati,stato").eq("stato", "attivo")
     ]);
     if (error) throw error;
 
     const selectedId = getSelectedStudentId() || students?.[0]?.id || "";
+    const diapason = isDiapason((students || []).find(student => student.id === selectedId));
     return `
       <section class="page studio-page" aria-labelledby="lesson-form-title">
         <header class="studio-compact-header">
@@ -484,14 +554,14 @@
           <p>Salvataggio reale nel database.</p>
         </header>
 
-        <form class="studio-form" data-studio-lesson-form>
+        <form class="studio-form" data-studio-lesson-form data-diapason="${diapason}">
           <label><span>Allievo</span>
             <select name="student_id" required>
               <option value="">Scegli…</option>
-              ${(students || []).map(student => `<option value="${student.id}" ${student.id === selectedId ? "selected" : ""}>${escapeHTML([student.nome, student.cognome].filter(Boolean).join(" "))}</option>`).join("")}
+              ${(students || []).map(student => `<option value="${student.id}" data-school="${isDiapason(student)}" ${student.id === selectedId ? "selected" : ""}>${escapeHTML([student.nome, student.cognome].filter(Boolean).join(" "))}</option>`).join("")}
             </select>
           </label>
-          <label><span>Percorso</span>
+          <label data-private-lesson-field><span>Percorso</span>
             <select name="package_id">
               <option value="">Nessuno / singola lezione</option>
               ${(packages || []).map((pkg, index) => `<option value="${pkg.id}" data-student="${pkg.student_id}" ${pkg.student_id !== selectedId ? "hidden disabled" : ""} ${pkg.student_id === selectedId && !(packages || []).slice(0, index).some(previous => previous.student_id === selectedId) ? "selected" : ""}>${escapeHTML(pkg.nome_percorso)} · ${pkg.incontri_usati}/${pkg.incontri_totali}</option>`).join("")}
@@ -499,22 +569,46 @@
           </label>
           <div class="studio-form-row">
             <label><span>Data e ora</span><input type="datetime-local" name="data_ora" value="${toDatetimeLocal(new Date())}" required></label>
-            <label><span>Durata</span><select name="durata_minuti"><option value="60">60 min</option><option value="45">45 min</option><option value="50">50 min</option><option value="30">30 min</option></select></label>
+            <label><span>Durata</span><select name="durata_minuti"><option value="60" ${!diapason ? "selected" : ""}>60 min</option><option value="45">45 min</option><option value="50" ${diapason ? "selected" : ""}>50 min</option><option value="30">30 min</option></select></label>
           </div>
           <label><span>Stato</span><select name="stato"><option value="presente">Presente</option><option value="assente">Assente</option><option value="recupero">Recupero</option><option value="annullata">Annullata</option></select></label>
-          <label><span>Focus / argomenti</span><input name="focus" placeholder="Es. ritmo, articolazione, dinamiche"></label>
-          <label class="private-field"><span>Note private · solo docente</span><textarea name="note_private" rows="4" placeholder="Queste note sono in una tabella separata e non sono leggibili dall’allievo."></textarea></label>
-          <label><span>Riepilogo per l’allievo</span><textarea name="riepilogo_allievo" rows="4" placeholder="Che cosa abbiamo esplorato oggi?"></textarea></label>
-          <label><span>Da fare / esercizi</span><textarea name="esercizi" rows="3" placeholder="Indicazioni per il prossimo incontro."></textarea></label>
-          <label><span>Registrazione Drive</span><input type="url" name="recording_url" placeholder="https://drive.google.com/..."></label>
-          <label><span>Trascrizione</span><input type="url" name="transcript_url" placeholder="https://drive.google.com/..."></label>
-          <label><span>Materiali</span><input type="url" name="materials_url" placeholder="https://drive.google.com/..."></label>
+          <label data-private-lesson-field><span>Focus / argomenti</span><input name="focus" placeholder="Es. ritmo, articolazione, dinamiche"></label>
+          <label class="private-field" data-private-lesson-field><span>Note private · solo docente</span><textarea name="note_private" rows="4" placeholder="Queste note sono in una tabella separata e non sono leggibili dall’allievo."></textarea></label>
+          <label><span data-shared-note-label>${diapason ? "Note per l’allievo" : "Riepilogo per l’allievo"}</span><textarea name="riepilogo_allievo" rows="6" placeholder="${diapason ? "Argomenti, suggerimenti, cose da provare e link: scrivi tutto qui." : "Che cosa abbiamo esplorato oggi?"}"></textarea></label>
+          <label data-private-lesson-field><span>Da fare / esercizi</span><textarea name="esercizi" rows="3" placeholder="Indicazioni per il prossimo incontro."></textarea></label>
+          <label data-private-lesson-field><span>Registrazione Drive</span><input type="url" name="recording_url" placeholder="https://drive.google.com/..."></label>
+          <label data-private-lesson-field><span>Trascrizione</span><input type="url" name="transcript_url" placeholder="https://drive.google.com/..."></label>
+          <label data-private-lesson-field><span>Materiali</span><input type="url" name="materials_url" placeholder="https://drive.google.com/..."></label>
           <label class="studio-check"><input type="checkbox" name="visible_to_student" checked><span>Rendi visibile il riepilogo all’allievo</span></label>
           <button class="primary-button" type="submit">Salva lezione</button>
           <p class="studio-status" data-studio-status role="status"></p>
         </form>
       </section>`;
   };
+
+  const diapasonStudentMarkup = (student, lessons, previewStudents) => `
+    <section class="page student-path-page" aria-labelledby="path-title">
+      <header class="student-path-hero">
+        <button class="back-button" type="button" data-route="${profile?.role === "admin" ? "studio-allievo" : "home"}"><span aria-hidden="true">←</span> Indietro</button>
+        ${profile?.role === "admin" ? `<div class="student-preview-picker">
+          <label for="studio-preview-student">Scegli allievo</label>
+          <select id="studio-preview-student" data-studio-preview-student>${previewStudents.map(item => `<option value="${item.id}" ${item.id === student.id ? "selected" : ""}>${escapeHTML([item.nome, item.cognome].filter(Boolean).join(" "))}</option>`).join("")}</select>
+        </div>` : '<button class="student-signout" type="button" data-studio-signout>Esci</button>'}
+        <p class="eyebrow">Studio · Diapason</p>
+        <h1 id="path-title">Le mie<br>lezioni.</h1>
+        <p class="student-path-intro">Ciao ${escapeHTML(student.nome)}. Qui trovi le presenze e le note dei nostri incontri.</p>
+      </header>
+      <section class="path-stack">
+        <article class="path-card"><small>Percorso</small><strong>Diapason</strong><p>Canto</p></article>
+        <article class="path-card school-schedule"><small>Orario settimanale</small><strong>${escapeHTML(schoolSchedule(student))}</strong></article>
+      </section>
+      <section class="studio-section">
+        <p class="content-kicker"><span>Registro presenze</span></p>
+        <h2>I nostri incontri.</h2>
+        <p class="studio-helper">Apri un incontro per ritrovare le note, i suggerimenti e i link.</p>
+        <div class="student-lesson-history">${schoolLessonCards(lessons)}</div>
+      </section>
+    </section>`;
 
   const studentPathMarkup = async () => {
     let studentId = profile?.student_id || "";
@@ -548,13 +642,16 @@
       </section>`;
 
     const [studentRes, packageRes, lessonsRes] = await Promise.all([
-      client.from("students").select("id,nome,cognome").eq("id", studentId).single(),
+      client.from("students").select("id,nome,cognome,tipo_studio,giorno_lezione,ora_lezione").eq("id", studentId).single(),
       client.from("packages").select("*").eq("student_id", studentId).order("created_at", { ascending: false }).limit(20),
-      client.from("lessons").select("*").eq("student_id", studentId).eq("visible_to_student", true).order("data_ora", { ascending: false }).limit(20)
+      client.from("lessons").select("*").eq("student_id", studentId).eq("visible_to_student", true).order("data_ora", { ascending: false })
     ]);
     if (studentRes.error) throw studentRes.error;
 
     const student = studentRes.data;
+    if (packageRes.error) throw packageRes.error;
+    if (lessonsRes.error) throw lessonsRes.error;
+    if (isDiapason(student)) return diapasonStudentMarkup(student, lessonsRes.data || [], previewStudents);
     const packages = packageRes.data || [];
     const activePackages = packages.filter(item => item.stato === "attivo");
     const displayPackages = activePackages.length ? activePackages : packages.slice(0, 1);
@@ -1005,16 +1102,19 @@
     const hint = form.querySelector("[data-reset-package-hint]");
     const countInput = form.elements.incontri_totali;
     const reset = isResetPackage(packageName.value);
+    const diapason = isDiapasonName(packageName.value);
+    const fixed = reset || diapason;
     if (countField) {
-      countField.hidden = reset;
-      countField.style.display = reset ? "none" : "";
+      countField.hidden = fixed;
+      countField.style.display = fixed ? "none" : "";
     }
     if (hint) {
-      hint.hidden = !reset;
-      hint.style.display = reset ? "" : "none";
+      hint.hidden = !fixed;
+      hint.style.display = fixed ? "" : "none";
+      hint.textContent = diapason ? "Diapason usa il registro presenze. Potrai impostare giorno e ora in Dati allievo." : "Reset Vocale dura 7 giorni: il totale è impostato automaticamente.";
     }
-    countInput.required = !reset;
-    countInput.disabled = reset;
+    countInput.required = !fixed;
+    countInput.disabled = fixed;
     if (reset) countInput.value = 7;
   }, true);
 
@@ -1026,11 +1126,22 @@
       return;
     }
 
+    const schoolConfig = event.target.closest("[data-studio-student-form], [data-edit-student]");
+    if (schoolConfig && ["tipo_studio", "giorno_lezione", "ora_lezione"].includes(event.target.name)) {
+      syncSchoolConfig(schoolConfig);
+      return;
+    }
+
     const studentSelect = event.target.closest('[data-studio-lesson-form] select[name="student_id"]');
     if (!studentSelect) return;
     const form = studentSelect.closest("[data-studio-lesson-form]");
     const packageSelect = form.elements.package_id;
     const studentId = studentSelect.value;
+    const diapason = studentSelect.selectedOptions[0]?.dataset.school === "true";
+    form.dataset.diapason = String(diapason);
+    form.querySelector("[data-shared-note-label]").textContent = diapason ? "Note per l’allievo" : "Riepilogo per l’allievo";
+    form.elements.riepilogo_allievo.placeholder = diapason ? "Argomenti, suggerimenti, cose da provare e link: scrivi tutto qui." : "Che cosa abbiamo esplorato oggi?";
+    form.elements.durata_minuti.value = diapason ? "50" : "60";
     let firstVisible = null;
     [...packageSelect.options].forEach((option, index) => {
       if (index === 0) {
@@ -1156,7 +1267,8 @@
         cognome: studentForm.elements.cognome.value.trim(),
         email: studentForm.elements.email.value.trim().toLowerCase(),
         telefono: studentForm.elements.telefono.value.trim() || null,
-        data_nascita: studentForm.elements.data_nascita.value || null
+        data_nascita: studentForm.elements.data_nascita.value || null,
+        ...schoolConfigPayload(studentForm)
       };
       const { data, error } = await client.from("students").insert(payload).select("id").single();
       if (error) { setStatus(error.message, "error"); return; }
@@ -1169,6 +1281,12 @@
     if (packageForm) {
       event.preventDefault();
       setStatus("Creo il percorso…");
+      if (isDiapasonName(packageForm.elements.nome_percorso.value)) {
+        const { error } = await client.from("students").update({ tipo_studio: "diapason" }).eq("id", packageForm.elements.student_id.value);
+        if (error) { setStatus(error.message, "error"); return; }
+        await renderStudio();
+        return;
+      }
       const payload = {
         student_id: packageForm.elements.student_id.value,
         nome_percorso: packageForm.elements.nome_percorso.value.trim(),
@@ -1203,7 +1321,8 @@
       button.disabled = true;
       setStatus("Salvo la lezione…");
 
-      const packageId = lessonForm.elements.package_id.value || null;
+      const diapason = lessonForm.dataset.diapason === "true";
+      const packageId = diapason ? null : lessonForm.elements.package_id.value || null;
       const studentId = lessonForm.elements.student_id.value;
 
       try {
@@ -1213,13 +1332,13 @@
           p_data_ora: new Date(lessonForm.elements.data_ora.value).toISOString(),
           p_durata_minuti: Number(lessonForm.elements.durata_minuti.value),
           p_stato: lessonForm.elements.stato.value,
-          p_focus: lessonForm.elements.focus.value.trim() || null,
-          p_note_private: lessonForm.elements.note_private.value.trim() || null,
+          p_focus: diapason ? null : lessonForm.elements.focus.value.trim() || null,
+          p_note_private: diapason ? null : lessonForm.elements.note_private.value.trim() || null,
           p_riepilogo_allievo: lessonForm.elements.riepilogo_allievo.value.trim() || null,
-          p_esercizi: lessonForm.elements.esercizi.value.trim() || null,
-          p_recording_url: lessonForm.elements.recording_url.value.trim() || null,
-          p_transcript_url: lessonForm.elements.transcript_url.value.trim() || null,
-          p_materials_url: lessonForm.elements.materials_url.value.trim() || null,
+          p_esercizi: diapason ? null : lessonForm.elements.esercizi.value.trim() || null,
+          p_recording_url: diapason ? null : lessonForm.elements.recording_url.value.trim() || null,
+          p_transcript_url: diapason ? null : lessonForm.elements.transcript_url.value.trim() || null,
+          p_materials_url: diapason ? null : lessonForm.elements.materials_url.value.trim() || null,
           p_visible_to_student: lessonForm.elements.visible_to_student.checked
         });
         if (error) throw error;

@@ -29,6 +29,24 @@ Per un nuovo progetto Supabase, applicare `supabase/reset-audio.sql` dopo `supab
 
 L’area allievo mostra esclusivamente i dati associati al proprio account e le lezioni marcate come visibili. Le note private docente non sono esposte.
 
+### Registro Diapason
+
+In **Studio → Allievi → scheda allievo → Dati allievo**, selezionare
+**Diapason · Canto** e salvare il giorno della settimana e l’ora. È possibile
+scegliere Diapason anche creando un allievo o da **Aggiungi percorso**:
+non richiede un numero di incontri. L’orario è settimanale, senza una data.
+
+Gli allievi Diapason vedono il percorso, l’orario e gli incontri condivisi
+apribili con presenza/assenza e un unico testo per note, suggerimenti e link.
+Pacchetti e pagamenti non compaiono in questa modalità. Le nuove lezioni
+Diapason non consumano incontri dei pacchetti privati. I dati precedenti
+restano conservati; eventuali note pubbliche e link già separati sono riuniti
+nel campo unico quando si modifica un incontro.
+
+I campi `tipo_studio`, `giorno_lezione` (1=lunedì, 7=domenica) e `ora_lezione`
+appartengono a `students` e mantengono le policy esistenti: scrittura docente,
+lettura dell’allievo solo sulla propria scheda. Lo schema include questi campi.
+
 ## PWA
 
 L’app è una PWA mobile-first installabile su iPhone, iPad e dispositivi compatibili. Le risorse principali vengono memorizzate per migliorare l’uso offline. Manifesti e Comunicazioni vengono aggiornati dalla rete quando disponibile.

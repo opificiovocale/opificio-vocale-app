@@ -3439,3 +3439,11 @@ body,
 @media (min-width: 900px) {
   .reset-upload-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 28px; }
 }
+
+
+/* Diapason: one shared note and a weekly schedule. */
+[data-diapason="true"] [data-private-lesson-field] { display: none !important; }
+.school-shared-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+.school-shared-note a { color: inherit; text-decoration: underline; text-underline-offset: .18em; }
+.school-schedule strong { font-size: clamp(1.25rem, 5vw, 1.7rem); line-height: 1.35; }
+[data-school-schedule][hidden] { display: none !important; }

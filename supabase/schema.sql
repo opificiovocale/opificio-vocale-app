@@ -17,8 +17,33 @@ create table if not exists public.students (
   updated_at timestamptz not null default now()
 );
 
-alter table public.students\n  add column if not exists data_nascita date;\n\ncreate unique index if not exists students_email_unique
+alter table public.students
+  add column if not exists data_nascita date;
+
+create unique index if not exists students_email_unique
   on public.students (lower(email));
+
+-- Diapason: a recurring weekday and local wall-clock time, never a calendar date.
+alter table public.students
+  add column if not exists tipo_studio text not null default 'privato'
+    check (tipo_studio in ('privato', 'diapason')),
+  add column if not exists giorno_lezione smallint
+    check (giorno_lezione between 1 and 7),
+  add column if not exists ora_lezione time without time zone;
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.students'::regclass
+      and conname = 'students_weekly_schedule_complete'
+  ) then
+    alter table public.students add constraint students_weekly_schedule_complete
+      check ((giorno_lezione is null) = (ora_lezione is null));
+  end if;
+end
+$$;
+comment on column public.students.giorno_lezione is 'Giorno settimanale ricorrente: 1 lunedi, 7 domenica; non e una data.';
+comment on column public.students.ora_lezione is 'Ora locale della lezione settimanale a Latina (Europe/Rome).';
 
 create table if not exists public.student_private_notes (
   student_id uuid primary key references public.students(id) on delete cascade,
