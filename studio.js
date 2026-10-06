@@ -58,7 +58,7 @@
   };
   const schoolConfigMarkup = (student = {}) => `
     <label><span>Percorso dell’allievo</span><select name="tipo_studio" data-school-type>
-      <option value="privato" ${!isDiapason(student) ? "selected" : ""}>Opificio Vocale · privato</option>
+      <option value="privato" ${!isDiapason(student) ? "selected" : ""}>Opificio Vocale</option>
       <option value="diapason" ${isDiapason(student) ? "selected" : ""}>Diapason · Canto</option>
     </select></label>
     <div class="studio-form-row" data-school-schedule ${isDiapason(student) ? "" : 'hidden style="display:none"'}>
