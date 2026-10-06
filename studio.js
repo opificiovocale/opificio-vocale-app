@@ -142,6 +142,27 @@
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
+  const schoolLessonTimestamp = (date, savedTime) => {
+    const time = String(savedTime || "").slice(0, 5);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Scegli la data della lezione.");
+    if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      throw new Error("Imposta prima l’orario fisso in Dati allievo, poi salva la lezione.");
+    }
+    const target = Date.parse(`${date}T${time}:00Z`);
+    const formatter = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "Europe/Rome", year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23"
+    });
+    const wallClock = timestamp => {
+      const parts = Object.fromEntries(formatter.formatToParts(new Date(timestamp)).map(part => [part.type, part.value]));
+      return Date.parse(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}Z`);
+    };
+    let timestamp = target;
+    for (let i = 0; i < 2; i += 1) timestamp += target - wallClock(timestamp);
+    if (wallClock(timestamp) !== target) throw new Error("L’orario fisso non è disponibile nella data scelta per il cambio dell’ora.");
+    return new Date(timestamp).toISOString();
+  };
+
   const getSelectedStudentId = () => {
     try { return localStorage.getItem(SELECTED_STUDENT_KEY) || ""; }
     catch { return ""; }
@@ -412,11 +433,11 @@
             <form class="studio-form studio-inline-form" data-studio-student-form>
               <div class="studio-form-row">
                 <label><span>Nome</span><input name="nome" required></label>
-                <label><span>Cognome</span><input name="cognome"></label>
+                <label><span>Cognome · facoltativo</span><input name="cognome"></label>
               </div>
-              <label><span>Email</span><input type="email" name="email" required autocomplete="email"></label>
-              <label><span>Telefono</span><input type="tel" name="telefono" autocomplete="tel"></label>
-              <label><span>Data di nascita</span><input type="date" name="data_nascita" autocomplete="bday"></label>
+              <label><span>Email · per l’accesso dell’allievo</span><input type="email" name="email" required autocomplete="email"></label>
+              <label><span>Telefono · facoltativo</span><input type="tel" name="telefono" autocomplete="tel"></label>
+              <label><span>Data di nascita · facoltativa</span><input type="date" name="data_nascita" autocomplete="bday"></label>
               ${schoolConfigMarkup()}
               <button class="primary-button" type="submit">Crea scheda</button>
               <p class="studio-status" data-studio-status role="status"></p>
@@ -551,7 +572,7 @@
           <button class="back-button" type="button" data-route="studio"><span aria-hidden="true">←</span> Studio</button>
           <p class="eyebrow">Studio · Lezione</p>
           <h1 id="lesson-form-title">Nuova lezione.</h1>
-          <p>Salvataggio reale nel database.</p>
+          <p data-lesson-form-help>${diapason ? "Scegli la data: l’orario viene ripreso dalla scheda dell’allievo." : "Registra l’incontro e le note da condividere."}</p>
         </header>
 
         <form class="studio-form" data-studio-lesson-form data-diapason="${diapason}">
@@ -568,7 +589,7 @@
             </select>
           </label>
           <div class="studio-form-row">
-            <label><span>Data e ora</span><input type="datetime-local" name="data_ora" value="${toDatetimeLocal(new Date())}" required></label>
+            <label><span data-lesson-date-label>${diapason ? "Data" : "Data e ora"}</span><input type="${diapason ? "date" : "datetime-local"}" name="data_ora" value="${diapason ? new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date()) : toDatetimeLocal(new Date())}" required></label>
             <label><span>Durata</span><select name="durata_minuti"><option value="60" ${!diapason ? "selected" : ""}>60 min</option><option value="45">45 min</option><option value="50" ${diapason ? "selected" : ""}>50 min</option><option value="30">30 min</option></select></label>
           </div>
           <label><span>Stato</span><select name="stato"><option value="presente">Presente</option><option value="assente">Assente</option><option value="recupero">Recupero</option><option value="annullata">Annullata</option></select></label>
@@ -1139,6 +1160,14 @@
     const studentId = studentSelect.value;
     const diapason = studentSelect.selectedOptions[0]?.dataset.school === "true";
     form.dataset.diapason = String(diapason);
+    const dateInput = form.elements.data_ora;
+    const chosenDate = dateInput.value.slice(0, 10);
+    const chosenTime = dateInput.value.split("T")[1] || toDatetimeLocal(new Date()).split("T")[1];
+    dateInput.type = diapason ? "date" : "datetime-local";
+    dateInput.value = chosenDate ? (diapason ? chosenDate : `${chosenDate}T${chosenTime}`) : "";
+    form.querySelector("[data-lesson-date-label]").textContent = diapason ? "Data" : "Data e ora";
+    const help = document.querySelector("[data-lesson-form-help]");
+    if (help) help.textContent = diapason ? "Scegli la data: l’orario viene ripreso dalla scheda dell’allievo." : "Registra l’incontro e le note da condividere.";
     form.querySelector("[data-shared-note-label]").textContent = diapason ? "Note per l’allievo" : "Riepilogo per l’allievo";
     form.elements.riepilogo_allievo.placeholder = diapason ? "Argomenti, suggerimenti, cose da provare e link: scrivi tutto qui." : "Che cosa abbiamo esplorato oggi?";
     form.elements.durata_minuti.value = diapason ? "50" : "60";
@@ -1326,10 +1355,18 @@
       const studentId = lessonForm.elements.student_id.value;
 
       try {
+        let lessonTimestamp;
+        if (diapason) {
+          const { data: student, error: scheduleError } = await client.from("students").select("ora_lezione").eq("id", studentId).single();
+          if (scheduleError) throw scheduleError;
+          lessonTimestamp = schoolLessonTimestamp(lessonForm.elements.data_ora.value, student?.ora_lezione);
+        } else {
+          lessonTimestamp = new Date(lessonForm.elements.data_ora.value).toISOString();
+        }
         const { error } = await client.rpc("create_studio_lesson", {
           p_student_id: studentId,
           p_package_id: packageId,
-          p_data_ora: new Date(lessonForm.elements.data_ora.value).toISOString(),
+          p_data_ora: lessonTimestamp,
           p_durata_minuti: Number(lessonForm.elements.durata_minuti.value),
           p_stato: lessonForm.elements.stato.value,
           p_focus: diapason ? null : lessonForm.elements.focus.value.trim() || null,

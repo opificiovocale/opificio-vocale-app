@@ -71,11 +71,11 @@
           '<input type="hidden" name="student_id" value="'+esc(student.id)+'">' +
           '<div class="studio-form-row">' +
             '<label><span>Nome</span><input name="nome" value="'+esc(student.nome)+'" required></label>' +
-            '<label><span>Cognome</span><input name="cognome" value="'+esc(student.cognome)+'"></label>' +
+            '<label><span>Cognome · facoltativo</span><input name="cognome" value="'+esc(student.cognome)+'"></label>' +
           '</div>' +
-          '<label><span>Email</span><input type="email" name="email" value="'+esc(student.email)+'" required></label>' +
-          '<label><span>Telefono</span><input type="tel" name="telefono" value="'+esc(student.telefono)+'"></label>' +
-          '<label><span>Data di nascita</span><input type="date" name="data_nascita" autocomplete="bday" value="'+esc(student.data_nascita)+'"></label>' +
+          '<label><span>Email · per l’accesso dell’allievo</span><input type="email" name="email" value="'+esc(student.email)+'" required></label>' +
+          '<label><span>Telefono · facoltativo</span><input type="tel" name="telefono" value="'+esc(student.telefono)+'"></label>' +
+          '<label><span>Data di nascita · facoltativa</span><input type="date" name="data_nascita" autocomplete="bday" value="'+esc(student.data_nascita)+'"></label>' +
           school.schoolConfigMarkup(student) +
           '<label class="studio-check"><input type="checkbox" name="attivo" '+(student.attivo ? "checked" : "")+'> <span>Allievo attivo</span></label>' +
           '<button class="primary-button" type="submit">Salva dati allievo</button>' +

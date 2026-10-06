@@ -39,7 +39,7 @@ function boot({ school = true, role = 'student', lessons = [] } = {}) {
   const window = { OPIFICIO_STUDIO_CONFIG: { supabaseUrl: 'https://example.invalid', supabasePublishableKey: 'test' }, supabase: { createClient: () => client }, addEventListener() {}, setTimeout() {}, clearTimeout() {}, dispatchEvent() {} };
   const context = { window, document, location: { hash: '#home' }, localStorage: { getItem() { return student.id; }, setItem() {} }, Intl, Date, URL, URLSearchParams, console, MutationObserver: class { observe() {} } };
   const instrumented = source.replace('  init();', `  profile = { role: ${JSON.stringify(role)}, student_id: 'student' };
-    window.testApi = { studentPathMarkup, studentDetailMarkup, lessonFormMarkup, schoolNoteHTML, schoolConfigMarkup, syncSchoolConfig };`);
+    window.testApi = { studentPathMarkup, studentDetailMarkup, lessonFormMarkup, schoolNoteHTML, schoolConfigMarkup, syncSchoolConfig, schoolLessonTimestamp };`);
   vm.runInNewContext(instrumented, context);
   vm.runInNewContext(editorSource, context);
   return {
@@ -101,6 +101,7 @@ test('Per Diapason rimane un solo campo note visibile nel modulo lezione', async
   const visible = html.replace(/<label\b[^>]*data-private-lesson-field[^>]*>[\s\S]*?<\/label>/g, '');
   assert.equal((visible.match(/<textarea/g) || []).length, 1);
   assert.match(visible, /Note per l’allievo/);
+  assert.match(visible, /<span data-lesson-date-label>Data<\/span><input type="date"/);
   assert.match(visible, /value="50" selected/);
   const teacher = await app.api.studentDetailMarkup('student');
   assert.match(teacher, /Martedì · ore 17:30/);
@@ -122,11 +123,12 @@ test('Il salvataggio docente memorizza giorno e ora sulla scheda giusta', async 
 
 test('La nuova lezione Diapason salva il testo unico senza consumare pacchetti', async () => {
   const app = boot({ role: 'admin' });
-  const lesson = form({ student_id: 'student', package_id: 'private-package', data_ora: '2026-10-06T17:30', durata_minuti: '50', stato: 'presente', focus: 'vecchio', note_private: 'vecchio', riepilogo_allievo: '  Suggerimento\nhttps://example.org/audio  ', esercizi: 'vecchio', recording_url: '', transcript_url: '', materials_url: '', visible_to_student: '' }, { diapason: 'true' });
+  const lesson = form({ student_id: 'student', package_id: 'private-package', data_ora: '2026-10-06', durata_minuti: '50', stato: 'presente', focus: 'vecchio', note_private: 'vecchio', riepilogo_allievo: '  Suggerimento\nhttps://example.org/audio  ', esercizi: 'vecchio', recording_url: '', transcript_url: '', materials_url: '', visible_to_student: '' }, { diapason: 'true' });
   lesson.elements.visible_to_student.checked = true;
   await app.submit('[data-studio-lesson-form]', lesson);
   const call = app.calls.find(call => call.name === 'create_studio_lesson');
   assert.equal(call.payload.p_package_id, null);
+  assert.equal(call.payload.p_data_ora, '2026-10-06T15:30:00.000Z');
   assert.equal(call.payload.p_focus, null);
   assert.equal(call.payload.p_note_private, null);
   assert.equal(call.payload.p_esercizi, null);
@@ -162,5 +164,19 @@ test('La vista privata mantiene pacchetti, pagamenti e modulo completo', async (
   const form = await app.api.lessonFormMarkup();
   assert.match(form, /data-diapason="false"/);
   assert.match(form, /Registrazione Drive/);
+  assert.match(form, /<input type="datetime-local" name="data_ora"/);
   assert.match(form, /Riepilogo per l’allievo/);
+});
+
+test('La data scelta usa sempre l’orario di Roma anche al cambio dell’ora e vicino a mezzanotte', () => {
+  const { schoolLessonTimestamp } = boot().api;
+  assert.equal(schoolLessonTimestamp('2026-10-24', '17:30:00'), '2026-10-24T15:30:00.000Z');
+  assert.equal(schoolLessonTimestamp('2026-10-25', '17:30:00'), '2026-10-25T16:30:00.000Z');
+  assert.equal(schoolLessonTimestamp('2026-10-06', '00:15:00'), '2026-10-05T22:15:00.000Z');
+});
+
+test('Un orario assente o impossibile non viene inventato', () => {
+  const { schoolLessonTimestamp } = boot().api;
+  assert.throws(() => schoolLessonTimestamp('2026-10-06', null), /Imposta prima l’orario fisso/);
+  assert.throws(() => schoolLessonTimestamp('2027-03-28', '02:30:00'), /cambio dell’ora/);
 });
