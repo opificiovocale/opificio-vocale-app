@@ -21,9 +21,9 @@ L’area docente permette di:
 - conservare note private separate dai contenuti visibili all’allievo;
 - collegare registrazioni, trascrizioni e materiali su Google Drive;
 - vedere l’anteprima dell’area allievo.
-- caricare e sostituire gli MP3 dei sette giorni in **Studio → Audio Reset**, condivisi tra gli iscritti a Reset Vocale.
+- caricare e sostituire benvenuto, bonus e MP3 dei sette giorni in **Studio → Audio Reset**, condivisi tra le persone iscritte a Reset Vocale.
 
-Gli audio Reset sono conservati nel bucket privato `reset-vocale`. La vista allievo e le policy del database sbloccano un giorno alla volta dalla `data_inizio` del percorso, usando il calendario di Roma. Se la data è assente, vale il giorno di creazione. Un percorso sospeso non dà accesso; i giorni già disponibili restano riascoltabili. L’anteprima **Test Reset** usa gli stessi file.
+Gli audio Reset sono conservati nel bucket privato `reset-vocale`. Benvenuto e bonus compaiono prima del Giorno 1 e sono disponibili anche prima della partenza, solo con un Reset attivo o completato. La vista allievo e le policy del database sbloccano i sette giorni uno alla volta dalla `data_inizio` del percorso, usando il calendario di Roma. Se la data è assente, vale il giorno di creazione. Un percorso sospeso non dà accesso; i giorni già disponibili restano riascoltabili. L’anteprima **Test Reset** usa gli stessi file e include **Prima di iniziare**. I due audio introduttivi non cambiano il conteggio di sette giorni.
 
 Per un nuovo progetto Supabase, applicare `supabase/reset-audio.sql` dopo `supabase/schema.sql`.
 

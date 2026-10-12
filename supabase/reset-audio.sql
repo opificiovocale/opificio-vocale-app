@@ -1,11 +1,12 @@
 -- Audio condivisi del Reset: applicare dopo schema.sql.
--- I file restano privati; ogni allievo accede solo ai giorni sbloccati.
+-- I file restano privati. -1 = benvenuto, 0 = bonus, 1–7 = giorni del percorso.
 create table public.reset_audio (
-  day smallint primary key check (day between 1 and 7),
+  day smallint primary key check (day between -1 and 7),
   title text not null check (length(btrim(title)) between 1 and 160),
   storage_path text not null unique check (
-    storage_path ~ '^giorno-[1-7]/[0-9a-f-]{36}\.mp3$'
-    and split_part(storage_path, '/', 1) = 'giorno-' || day::text
+    storage_path ~ '^(benvenuto|bonus|giorno-[1-7])/[0-9a-f-]{36}[.]mp3$'
+    and split_part(storage_path, '/', 1) = case day
+      when -1 then 'benvenuto' when 0 then 'bonus' else 'giorno-' || day::text end
   ),
   file_name text not null check (length(file_name) between 1 and 240),
   size_bytes bigint not null check (size_bytes > 0 and size_bytes <= 26214400),
@@ -41,9 +42,31 @@ $$;
 revoke all on function private.reset_unlocked_day() from public, anon;
 grant execute on function private.reset_unlocked_day() to authenticated;
 
+-- L'assenza di un Reset e un Reset futuro hanno entrambi zero giorni sbloccati.
+-- Verificare anche l'iscrizione evita di esporre gli audio introduttivi ad altri account.
+create function private.has_reset_access()
+returns boolean
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select (select auth.uid()) is not null and exists (
+    select 1 from public.packages p
+    where p.student_id = (select private.current_student_id())
+      and lower(btrim(p.nome_percorso)) = 'reset vocale'
+      and p.stato in ('attivo', 'completato')
+  );
+$$;
+revoke all on function private.has_reset_access() from public, anon;
+grant execute on function private.has_reset_access() to authenticated;
+
 create policy reset_audio_select
 on public.reset_audio for select to authenticated
-using ((select private.is_admin()) or day <= (select private.reset_unlocked_day()));
+using (
+  (select private.is_admin())
+  or ((select private.has_reset_access()) and day <= (select private.reset_unlocked_day()))
+);
 
 create policy reset_audio_admin_insert
 on public.reset_audio for insert to authenticated
@@ -65,18 +88,18 @@ create policy reset_audio_storage_select
 on storage.objects for select to authenticated
 using (
   bucket_id = 'reset-vocale'
-  and ((select private.is_admin()) or exists (
+  and ((select private.is_admin()) or ((select private.has_reset_access()) and exists (
     select 1 from public.reset_audio a
     where a.storage_path = storage.objects.name
       and a.day <= (select private.reset_unlocked_day())
-  ))
+  )))
 );
 
 create policy reset_audio_storage_insert
 on storage.objects for insert to authenticated
 with check (
   bucket_id = 'reset-vocale'
-  and name ~ '^giorno-[1-7]/[0-9a-f-]{36}\.mp3$'
+  and name ~ '^(benvenuto|bonus|giorno-[1-7])/[0-9a-f-]{36}[.]mp3$'
   and (select private.is_admin())
 );
 
@@ -85,10 +108,11 @@ on storage.objects for update to authenticated
 using (bucket_id = 'reset-vocale' and (select private.is_admin()))
 with check (
   bucket_id = 'reset-vocale'
-  and name ~ '^giorno-[1-7]/[0-9a-f-]{36}\.mp3$'
+  and name ~ '^(benvenuto|bonus|giorno-[1-7])/[0-9a-f-]{36}[.]mp3$'
   and (select private.is_admin())
 );
 
 create policy reset_audio_storage_delete
 on storage.objects for delete to authenticated
 using (bucket_id = 'reset-vocale' and (select private.is_admin()));
+

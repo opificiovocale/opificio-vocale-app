@@ -5,14 +5,14 @@ const { readFileSync } = require('node:fs');
 const { randomUUID } = require('node:crypto');
 const source = readFileSync(require('node:path').join(__dirname, '../studio.js'), 'utf8');
 
-const audio = day => ({ day, title: `Audio ${day}`, storage_path: `giorno-${day}/${randomUUID()}.mp3`, file_name: `giorno-${day}.mp3`, size_bytes: 6682701 });
+const audio = day => ({ day, title: `Audio ${day}`, storage_path: `${day === -1 ? 'benvenuto' : day === 0 ? 'bonus' : `giorno-${day}`}/${randomUUID()}.mp3`, file_name: `audio-${day}.mp3`, size_bytes: 6682701 });
 const defaultPackage = { id: 'package', student_id: 'student', nome_percorso: 'Reset Vocale', stato: 'attivo', data_inizio: '2026-10-04', created_at: '2026-10-03T12:00:00Z' };
 
 async function boot({ hash = '#studio-reset', role = 'admin', audios = [], packages = [defaultPackage], lessons = [], now = '2026-10-04T10:00:00Z', saveError = false, signedError = false, audioError = false, loggedIn = true } = {}) {
   let html = '';
   const rows = [...audios];
   const calls = [], events = {}, statuses = new Map();
-  const buttons = Array.from({ length: 7 }, () => ({ disabled: false }));
+  const buttons = Array.from({ length: 9 }, () => ({ disabled: false }));
   const profile = { id: 'user', role, student_id: role === 'student' ? 'student' : null };
   const student = { id: 'student', nome: 'Riccardo', cognome: 'Test', attivo: true };
   class ClockDate extends Date { constructor(...args) { super(...(args.length ? args : [now])); } }
@@ -53,7 +53,7 @@ async function boot({ hash = '#studio-reset', role = 'admin', audios = [], packa
   const document = {
     querySelector(selector) {
       if (selector === '#app') return app;
-      const match = selector.match(/^\[data-reset-card="(\d)"\]/);
+      const match = selector.match(/^\[data-reset-card="(-?\d)"\]/);
       if (match) { const n = Number(match[1]); if (!statuses.has(n)) statuses.set(n, { textContent: '', dataset: {} }); return statuses.get(n); }
       return null;
     },
@@ -78,11 +78,28 @@ async function boot({ hash = '#studio-reset', role = 'admin', audios = [], packa
   };
 }
 
-test('Audio Reset mostra sette caricamenti reali e un selettore MP3', async () => {
+test('Audio Reset mostra benvenuto e bonus prima dei sette caricamenti giornalieri', async () => {
   const app = await boot();
-  assert.equal((app.app.innerHTML.match(/data-reset-upload="/g) || []).length, 7);
+  assert.equal((app.app.innerHTML.match(/data-reset-upload="/g) || []).length, 9);
+  assert.ok(app.app.innerHTML.indexOf('data-reset-upload="-1"') < app.app.innerHTML.indexOf('data-reset-upload="0"'));
+  assert.ok(app.app.innerHTML.indexOf('data-reset-upload="0"') < app.app.innerHTML.indexOf('data-reset-upload="1"'));
+  assert.match(app.app.innerHTML, /Benvenuto a Reset Vocale|Meditazione · La voce come oggetto/);
   assert.match(app.app.innerHTML, /name="audio" accept="\.mp3,audio\/mpeg,audio\/mp3"/);
   assert.match(app.app.innerHTML, /Carica audio/);
+});
+
+test('Benvenuto e bonus si caricano e si sostituiscono senza toccare gli audio giornalieri', async () => {
+  for (const [day, folder] of [[-1, 'benvenuto'], [0, 'bonus']]) {
+    const previous = audio(day), daily = audio(1);
+    const app = await boot({ audios: [previous, daily] });
+    await app.upload({ day, title: folder });
+    const upload = app.calls.find(c => c.type === 'upload');
+    assert.match(upload.path, new RegExp(`^${folder}/[0-9a-f-]{36}\\.mp3$`));
+    assert.equal(app.rows.find(row => row.day === day).storage_path, upload.path);
+    assert.equal(app.rows.find(row => row.day === 1).storage_path, daily.storage_path);
+    assert.equal(app.calls.find(c => c.type === 'remove').paths[0], previous.storage_path);
+    assert.equal(app.statuses.get(day).textContent, `Audio ${folder} caricato.`);
+  }
 });
 
 test('Il caricamento salva il giorno e mostra il lettore, senza esporre HTML dal titolo', async () => {
@@ -138,10 +155,26 @@ test('La vista allievo mostra soltanto i giorni sbloccati, con il calendario di 
   assert.ok(app.calls.filter(c => c.type === 'signed').every(c => c.path.startsWith('giorno-1/')));
 });
 
-test('Prima della data di inizio non viene richiesto alcun audio', async () => {
-  const app = await boot({ hash: '#percorso', role: 'student', packages: [{ ...defaultPackage, data_inizio: '2026-10-05' }], audios: [audio(1)] });
+test('Prima della partenza sono ascoltabili solo benvenuto e bonus, con progresso a zero', async () => {
+  const app = await boot({ hash: '#percorso', role: 'student', packages: [{ ...defaultPackage, data_inizio: '2026-10-05' }], audios: [audio(-1), audio(0), audio(1)] });
   assert.match(app.app.innerHTML, /Il percorso inizia il/);
-  assert.ok(!app.calls.some(c => c.type === 'signed'));
+  assert.match(app.app.innerHTML, /Ascolta il benvenuto/);
+  assert.match(app.app.innerHTML, /Ascolta il bonus/);
+  assert.match(app.app.innerHTML, /0 giorni sbloccati su 7/);
+  assert.doesNotMatch(app.app.innerHTML, /Ascolta il Giorno 1|Giorno -1|Giorno 0/);
+  const signed = app.calls.filter(c => c.type === 'signed');
+  assert.equal(signed.length, 2);
+  assert.ok(signed.every(c => /^(benvenuto|bonus)\//.test(c.path)));
+  assert.ok(app.app.innerHTML.indexOf('data-reset-intro="-1"') < app.app.innerHTML.indexOf('data-reset-intro="0"'));
+});
+
+test('Gli audio introduttivi restano prima dei giorni sbloccati senza aumentare il totale', async () => {
+  const app = await boot({ hash: '#percorso', role: 'student', audios: [audio(-1), audio(0), audio(1), audio(7)], now: '2026-10-12T10:00:00Z' });
+  assert.match(app.app.innerHTML, /Giorno 7 di 7/);
+  assert.ok(app.app.innerHTML.indexOf('Ascolta il benvenuto') < app.app.innerHTML.indexOf('Ascolta il bonus'));
+  assert.ok(app.app.innerHTML.indexOf('Ascolta il bonus') < app.app.innerHTML.indexOf('Ascolta il Giorno 7'));
+  assert.equal(app.calls.filter(c => c.type === 'signed').length, 4);
+  assert.doesNotMatch(app.app.innerHTML, /di 9|Giorno -1|Giorno 0/);
 });
 
 test('Cambio ora e assenza di data di inizio non spostano i giorni del Reset', async () => {
@@ -166,11 +199,18 @@ test('Un errore nella firma del file mantiene la schermata utilizzabile', async 
 });
 
 test('Test Reset usa gli audio caricati e collega il pannello di caricamento', async () => {
-  const app = await boot({ hash: '#reset-demo?day=2', audios: [audio(1), audio(2), audio(3)] });
-  assert.equal((app.app.innerHTML.match(/<audio /g) || []).length, 2);
+  const app = await boot({ hash: '#reset-demo?day=2', audios: [audio(-1), audio(0), audio(1), audio(2), audio(3)] });
+  assert.equal((app.app.innerHTML.match(/<audio /g) || []).length, 4);
   assert.match(app.app.innerHTML, /data-route="studio-reset">Carica gli audio/);
   assert.doesNotMatch(app.app.innerHTML, /Ascolta il Giorno 3/);
   assert.ok(!app.calls.some(c => c.type === 'upload'));
+});
+
+test('Test Reset può simulare il periodo prima del Giorno 1', async () => {
+  const app = await boot({ hash: '#reset-demo?day=0', audios: [audio(-1), audio(0), audio(1)] });
+  assert.match(app.app.innerHTML, /href="#reset-demo\?day=0" aria-current="true"/);
+  assert.equal((app.app.innerHTML.match(/<audio /g) || []).length, 2);
+  assert.doesNotMatch(app.app.innerHTML, /Ascolta il Giorno 1|Oggi · Giorno 0/);
 });
 
 const vocalBoom = { id: 'boom', student_id: 'student', nome_percorso: 'Vocal BOOM', stato: 'attivo', incontri_totali: 4, incontri_usati: 2, created_at: '2026-10-01T12:00:00Z' };
@@ -199,10 +239,12 @@ test('Reset e gli altri percorsi attivi restano visibili per allievo e anteprima
 
 test('Gli altri percorsi restano visibili prima e dopo il giorno di inizio di Reset', async () => {
   const packages = [{ ...defaultPackage, data_inizio: '2026-10-05' }, vocalBoom];
-  const before = await boot({ hash: '#percorso', role: 'student', packages, audios: [audio(1)] });
+  const before = await boot({ hash: '#percorso', role: 'student', packages, audios: [audio(-1), audio(0), audio(1)] });
   assert.match(before.app.innerHTML, /Vocal BOOM/);
   assert.match(before.app.innerHTML, /Il percorso inizia il/);
-  assert.ok(!before.calls.some(c => c.type === 'signed'));
+  assert.match(before.app.innerHTML, /Ascolta il benvenuto/);
+  assert.match(before.app.innerHTML, /Ascolta il bonus/);
+  assert.equal(before.calls.filter(c => c.type === 'signed').length, 2);
   const started = await boot({ hash: '#percorso', role: 'student', packages, audios: [audio(1), audio(2)], now: '2026-10-04T22:05:00Z' });
   assert.match(started.app.innerHTML, /Vocal BOOM/);
   assert.match(started.app.innerHTML, /Giorno 1 di 7/);
@@ -217,9 +259,15 @@ test('Un Reset completato rimane riascoltabile insieme al percorso ancora attivo
 });
 
 test('Un Reset sospeso non nasconde il percorso attivo e non dà accesso agli audio', async () => {
-  const app = await boot({ hash: '#percorso', role: 'student', packages: [{ ...defaultPackage, stato: 'sospeso' }, vocalBoom], audios: [audio(1)] });
+  const app = await boot({ hash: '#percorso', role: 'student', packages: [{ ...defaultPackage, stato: 'sospeso' }, vocalBoom], audios: [audio(-1), audio(0), audio(1)] });
   assert.match(app.app.innerHTML, /Vocal BOOM/);
-  assert.doesNotMatch(app.app.innerHTML, /Ascolta il Giorno/);
+  assert.doesNotMatch(app.app.innerHTML, /Ascolta il Giorno|Ascolta il benvenuto|Ascolta il bonus/);
+  assert.ok(!app.calls.some(c => c.type === 'signed'));
+});
+
+test('Una persona senza Reset non vede né richiede gli audio introduttivi', async () => {
+  const app = await boot({ hash: '#percorso', role: 'student', packages: [vocalBoom], audios: [audio(-1), audio(0)] });
+  assert.doesNotMatch(app.app.innerHTML, /Ascolta il benvenuto|Ascolta il bonus/);
   assert.ok(!app.calls.some(c => c.type === 'signed'));
 });
 
@@ -229,3 +277,4 @@ test('Un errore degli audio Reset non impedisce di vedere gli altri percorsi', a
   assert.match(app.app.innerHTML, /Giorno 1 di 7/);
   assert.match(app.app.innerHTML, /Audio temporaneamente non disponibili/);
 });
+
