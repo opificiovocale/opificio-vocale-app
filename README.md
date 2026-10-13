@@ -51,7 +51,7 @@ lettura dell’allievo solo sulla propria scheda. Lo schema include questi campi
 
 ### Desktop e Studio
 
-Da 1024 px l’app usa una navigazione laterale e Studio dispone di una barra di accessi rapidi. Schede e lezioni usano pannelli affiancati e moduli senza rientri annidati. Da 1280 px l’elenco delle persone resta a lato della scheda, della nuova lezione e dell’anteprima allievo; la ricerca filtra per nome senza cambiare pagina. L’elenco completo permette anche di cercare per email o percorso. Audio Reset usa due colonne, e tre da 1440 px. Su telefono restano la barra inferiore e i moduli impilati.
+Da 1024 px l’app usa una navigazione laterale. Studio presenta tre accessi principali (Panoramica, Allievi e Nuova lezione) e raccoglie gli altri strumenti sotto Altro. La scheda usa un’unica area centrale: le lezioni sono subito visibili, mentre dati, note e archivio si aprono su richiesta. I campi dei moduli restano affiancati. Nell’elenco Allievi si può cercare per nome, email o percorso. Audio Reset usa al massimo due colonne e apre i campi di caricamento con Carica audio o Cambia audio. Su telefono restano la barra inferiore e i moduli impilati.
 
 L’app è una PWA mobile-first installabile su iPhone, iPad e dispositivi compatibili. Le risorse principali vengono memorizzate per migliorare l’uso offline. Manifesti e Comunicazioni vengono aggiornati dalla rete quando disponibile.
 

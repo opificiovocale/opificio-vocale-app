@@ -3450,8 +3450,7 @@ body,
 
 /* Studio workspace: small screens keep the bottom navigation and stacked forms. */
 .studio-workspace-content { min-width: 0; }
-.studio-workspace-nav,
-.studio-workspace-sidebar { display: none; }
+.studio-workspace-nav { display: none; }
 .studio-directory-search { display: grid; gap: 8px; margin-bottom: 20px; }
 .studio-directory-search > span { font-size: 12px; font-weight: 700; }
 .studio-directory-search input {
@@ -3463,6 +3462,14 @@ body,
 .studio-form input:focus-visible,
 .studio-form select:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 .studio-directory-grid { min-width: 0; }
+.studio-utility-panel { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--ov-line-soft); }
+.studio-utility-panel > summary,
+.reset-upload-options > summary { min-height: 40px; padding: 10px 0; font-size: 13px; cursor: pointer; }
+.studio-utility-actions { display: flex; flex-wrap: wrap; gap: 12px; padding-top: 12px; }
+.studio-utility-actions button { min-height: 44px; padding: 10px 16px; border: 1px solid var(--ov-line-soft); border-radius: 10px; background: #fff; cursor: pointer; }
+.reset-upload-options { margin-top: 16px; border-top: 1px solid var(--ov-line-soft); }
+.studio-detail-archive > h2,
+.studio-detail-secondary details > h2 { margin-top: 24px; }
 
 @media (min-width: 1024px) {
   :root { --desktop-rail: 176px; --desktop-topbar: 80px; }
@@ -3516,7 +3523,7 @@ body,
 
   .studio-workspace-nav {
     position: sticky; z-index: 10; top: var(--desktop-topbar);
-    display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 32px;
+    display: flex; flex-wrap: wrap; gap: 6px; max-width: 1120px; margin: 0 auto; padding: 14px 32px;
     border-bottom: 1px solid var(--ov-line-soft); background: rgba(255,255,255,.98);
   }
   .studio-workspace-nav button {
@@ -3527,6 +3534,12 @@ body,
     border-color: #30332f; background: #30332f; color: #fff;
   }
   .studio-workspace-nav button:hover { border-color: var(--ov-line-soft); }
+  .studio-workspace-content { max-width: 1120px; margin: 0 auto; }
+  .studio-extra-nav { position: relative; margin-left: auto; }
+  .studio-extra-nav > summary { min-height: 40px; padding: 10px 14px; border: 1px solid transparent; border-radius: 10px; font-size: 13px; cursor: pointer; }
+  .studio-extra-nav > summary[aria-current="page"] { border-color: var(--ov-line-soft); background: var(--ov-soft); }
+  .studio-extra-links { position: absolute; z-index: 12; top: calc(100% + 8px); right: 0; display: grid; width: 200px; padding: 8px; border: 1px solid var(--ov-line-soft); border-radius: 12px; background: #fff; box-shadow: 0 8px 24px rgba(32,35,31,.08); }
+  .studio-extra-links button { width: 100%; text-align: left; }
   .studio-workspace .studio-hero,
   .studio-workspace .studio-compact-header,
   .studio-workspace-content > .studio-page > .studio-hero,
@@ -3554,9 +3567,8 @@ body,
   .studio-workspace-content .studio-section h2 {
     max-width: 100%; font-size: clamp(28px, 2.5vw, 38px); line-height: 1.15;
   }
-  .studio-overview-panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .studio-overview-panels { display: block; }
   .studio-overview-panels.is-single { grid-template-columns: minmax(0, 1fr); }
-  .studio-overview-panels > .studio-section + .studio-section { border-left: 1px solid var(--ov-line-soft); }
   .studio-workspace .studio-action-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .studio-workspace .studio-action-card {
     min-width: 0; min-height: 128px; padding: 20px; grid-template-columns: 32px minmax(0, 1fr); gap: 8px;
@@ -3610,13 +3622,13 @@ body,
   .studio-workspace-content .reset-student-preview { padding: 28px 32px; }
 
   /* Directory with a separate creation panel; records remain easy to scan. */
-  .studio-page-directory .studio-list { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 0 28px; align-items: start; }
+  .studio-page-directory .studio-list { display: block; }
   .studio-page-directory .studio-directory-search,
   .studio-page-directory .studio-directory-grid,
   .studio-page-directory [data-directory-status] { grid-column: 1; }
   .studio-page-directory .studio-new-student {
-    grid-column: 2; grid-row: 1 / span 3; margin: 0; padding: 20px;
-    border: 1px solid var(--ov-line-soft); border-radius: 16px;
+    margin: 24px 0 0; padding: 16px 0;
+    border-top: 1px solid var(--ov-line-soft);
   }
   .studio-page-directory .studio-new-student .studio-form { grid-template-columns: minmax(0, 1fr); }
   .studio-workspace-content .student-row { grid-template-columns: 48px minmax(0, 1fr) 24px; gap: 14px; }
@@ -3625,14 +3637,14 @@ body,
   .studio-workspace-content .student-row small,
   .studio-workspace-content .student-row em { font-size: 12px; letter-spacing: 0; }
 
-  .studio-page-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 24px; padding: 32px; }
+  .studio-page-detail { display: block; padding: 32px; }
   .studio-workspace-content .studio-page-detail > .studio-compact-header { grid-column: 1 / -1; padding: 0; }
-  .studio-workspace-content .studio-page-detail > .studio-summary-grid { grid-column: 1 / -1; padding: 0; }
-  .studio-workspace-content .studio-page-detail > .studio-section { min-width: 0; padding: 24px; border: 1px solid var(--ov-line-soft); border-radius: 20px; }
+  .studio-workspace-content .studio-page-detail > .studio-summary-grid { padding: 24px 0; }
+  .studio-workspace-content .studio-page-detail > .studio-section { min-width: 0; padding: 20px 0; border-top: 1px solid var(--ov-line-soft); border-radius: 0; }
   .studio-page-detail > .studio-edit-hub,
   .studio-page-detail > .studio-detail-history { grid-column: 1 / -1; }
   .studio-page-detail .studio-edit-hub {
-    display: grid; grid-template-columns: minmax(236px, .65fr) minmax(0, 1fr); gap: 16px 24px; align-items: start;
+    display: block;
   }
   .studio-edit-hub > .content-kicker,
   .studio-edit-hub > h2 { grid-column: 1 / -1; margin-bottom: 0; }
@@ -3640,44 +3652,17 @@ body,
   .studio-edit-hub > .studio-editor-packages { grid-column: 1; grid-row: 4; }
   .studio-edit-hub > .studio-editor-lessons { grid-column: 2; grid-row: 3 / span 2; }
   .studio-edit-hub > .studio-inline-panel { min-width: 0; margin-top: 8px; }
-  .studio-workspace-content .studio-editor-profile .studio-form,
-  .studio-workspace-content .studio-editor-packages .studio-form,
   .studio-page-detail > .studio-section:not(.studio-edit-hub) .studio-form { grid-template-columns: minmax(0, 1fr); }
+  .studio-editor-options > summary,
+  .studio-editor-lessons > summary { font-size: 14px; letter-spacing: 0; text-transform: none; }
   .studio-workspace-content .studio-lesson-row { gap: 16px; }
   .studio-workspace-content .studio-lesson-row-copy { min-width: 0; overflow-wrap: anywhere; }
   .studio-workspace-content .studio-row-actions { flex-wrap: wrap; }
 }
 
-@media (min-width: 1280px) {
-  .studio-workspace.has-directory { display: grid; grid-template-columns: 224px minmax(0, 1fr); align-items: start; }
-  .studio-workspace.has-directory > .studio-workspace-nav { grid-column: 1 / -1; }
-  .studio-workspace-sidebar {
-    position: sticky; top: 164px; display: block; max-height: calc(100dvh - 188px);
-    padding: 24px 16px; overflow: auto; border-right: 1px solid var(--ov-line-soft);
-    background: var(--ov-soft); scrollbar-width: thin;
-  }
-  .studio-workspace-sidebar .content-kicker { font-size: 11px; }
-  .studio-workspace-sidebar .studio-directory-search input { font-size: 14px; }
-  .studio-workspace-students { display: grid; gap: 5px; margin-bottom: 16px; }
-  .studio-workspace-students button {
-    width: 100%; min-height: 58px; padding: 12px; border: 1px solid transparent;
-    border-radius: 10px; background: transparent; text-align: left; overflow-wrap: anywhere; cursor: pointer;
-  }
-  .studio-workspace-students button strong { display: block; font-size: 14px; line-height: 1.4; }
-  .studio-workspace-students button small { display: block; margin-top: 4px; font-size: 11px; opacity: .7; }
-  .studio-workspace-students button[aria-current="true"] { border-color: var(--ov-line-soft); background: #fff; }
-  .studio-workspace-students button:hover { background: #fff; }
-  .studio-workspace-sidebar .studio-text-button { margin-top: 16px; font-size: 12px; text-align: left; }
-}
-
-@media (min-width: 1440px) {
-  .studio-workspace-content .reset-upload-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
 @media print {
-  .topbar, .bottom-nav, .podcast-dock, .studio-workspace-nav, .studio-workspace-sidebar { display: none !important; }
+  .topbar, .bottom-nav, .podcast-dock, .studio-workspace-nav { display: none !important; }
   .app-shell { width: 100%; box-shadow: none; }
   #app { padding: 0; }
-  .studio-workspace.has-directory { display: block; }
 }
 

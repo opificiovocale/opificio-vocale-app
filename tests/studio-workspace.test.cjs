@@ -5,13 +5,13 @@ const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const source = readFileSync(path.join(__dirname, '../studio.js'), 'utf8');
 
-function boot({ role = 'admin', directoryError = false, deferDirectory = false } = {}) {
+function boot({ role = 'admin', deferStudent = false } = {}) {
   const students = [
     { id: 's1', nome: 'Zoë', cognome: 'Rossi', attivo: true, email: 'zoe@example.test' },
     { id: 's2', nome: '<img src=x onerror=alert(1)>', cognome: '"prova"', attivo: false }
   ];
   const calls = [], events = {}, timers = [];
-  let releaseDirectory, authChange;
+  let releaseRead, authChange;
   const app = { innerHTML: '' };
   const location = { hash: '#studio-allievo' };
   const client = {
@@ -24,13 +24,14 @@ function boot({ role = 'admin', directoryError = false, deferDirectory = false }
         select(value) { fields = value; calls.push({ table, fields }); return this; },
         eq(key, value) { filters.push([key, value]); return this; },
         order() { return this; }, limit() { return this; },
-        async single() { return { data: result().data[0], error: null }; },
+        async single() {
+          if (deferStudent && table === 'students' && fields === '*') {
+            return new Promise(done => { releaseRead = () => done({ data: result().data[0], error: null }); });
+          }
+          return { data: result().data[0], error: null };
+        },
         async maybeSingle() { return { data: null, error: null }; },
         then(resolve, reject) {
-          if (fields === 'id,nome,cognome,attivo') {
-            if (deferDirectory) return new Promise(done => { releaseDirectory = () => done(result()); }).then(resolve, reject);
-            if (directoryError) return Promise.resolve({ data: null, error: new Error('offline') }).then(resolve, reject);
-          }
           return Promise.resolve(result()).then(resolve, reject);
         }
       };
@@ -47,7 +48,7 @@ function boot({ role = 'admin', directoryError = false, deferDirectory = false }
     session = { user: { id: 'user' } };
     window.testApi = { workspaceMarkup, workspaceNavigationMarkup, renderStudio };`);
   vm.runInNewContext(instrumented, { window, document, location, localStorage: { getItem: () => 's1' }, URL, URLSearchParams, Intl, Date, console });
-  return { app, location, students, calls, events, timers, api: window.testApi, release: () => releaseDirectory(), signOut: () => authChange('SIGNED_OUT', null) };
+  return { app, location, students, calls, events, timers, api: window.testApi, release: () => releaseRead(), signOut: () => authChange('SIGNED_OUT', null) };
 }
 
 test('La vista allievo non legge la directory docente e non contiene i suoi comandi', async () => {
@@ -58,14 +59,13 @@ test('La vista allievo non legge la directory docente e non contiene i suoi coma
   assert.equal(app.calls.length, 0);
 });
 
-test('La directory docente usa solo nomi e stato, rende sicuro il testo e conserva la scheda selezionata', async () => {
+test('La navigazione docente non richiede un’altra lettura delle persone e mantiene gli strumenti secondari accessibili', async () => {
   const app = boot();
   const html = await app.api.workspaceMarkup('studio-allievo', '<p>Scheda</p>');
-  assert.match(html, /data-studio-student="s1"[^>]*aria-current="true"/);
-  assert.match(html, /Zoë Rossi/);
-  assert.doesNotMatch(html, /<img|zoe@example.test/);
-  assert.match(html, /&lt;img/);
-  assert.deepEqual(app.calls, [{ table: 'students', fields: 'id,nome,cognome,attivo' }]);
+  assert.match(html, /data-route="studio-allievi" aria-current="page"/);
+  assert.match(html, /<details class="studio-extra-nav">[\s\S]*<summary[^>]*>Altro<\/summary>[\s\S]*Audio Reset/);
+  assert.doesNotMatch(html, /studio-workspace-sidebar|zoe@example.test/);
+  assert.equal(app.calls.length, 0);
 });
 
 test('La ricerca trova anche i nomi con accenti e può ripristinare tutte le schede', () => {
@@ -90,16 +90,8 @@ test('La ricerca trova anche i nomi con accenti e può ripristinare tutte le sch
   assert.equal(status.textContent, '');
 });
 
-test('Una directory non disponibile non impedisce di compilare la lezione', async () => {
-  const app = boot({ directoryError: true });
-  const html = await app.api.workspaceMarkup('studio-lezione', '<form>Lezione in corso</form>');
-  assert.match(html, /Lezione in corso/);
-  assert.match(html, /Navigazione Studio/);
-  assert.doesNotMatch(html, /studio-workspace-sidebar/);
-});
-
 test('Una lettura ritardata non sovrascrive la Home dopo il cambio di pagina', async () => {
-  const app = boot({ deferDirectory: true });
+  const app = boot({ deferStudent: true });
   const render = app.api.renderStudio();
   await new Promise(setImmediate);
   app.location.hash = '#home';
@@ -109,8 +101,8 @@ test('Una lettura ritardata non sovrascrive la Home dopo il cambio di pagina', a
   assert.equal(app.app.innerHTML, 'HOME');
 });
 
-test('Una lettura ritardata non ripubblica la directory dopo la disconnessione', async () => {
-  const app = boot({ deferDirectory: true });
+test('Una lettura ritardata non ripubblica la scheda docente dopo la disconnessione', async () => {
+  const app = boot({ deferStudent: true });
   const render = app.api.renderStudio();
   await new Promise(setImmediate);
   app.signOut();

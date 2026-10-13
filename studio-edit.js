@@ -63,8 +63,8 @@
     section.className = "studio-section studio-edit-hub";
     section.dataset.studioEditHub = "";
     section.innerHTML =
-      '<p class="content-kicker"><span>Modifica</span> · Scheda completa</p>' +
-      '<h2>Gestisci allievo.</h2>' +
+      '<details class="studio-inline-panel studio-editor-options">' +
+        '<summary>Dati e impostazioni</summary>' +
       '<details class="studio-inline-panel studio-editor-profile" open>' +
         '<summary>Dati allievo</summary>' +
         '<form class="studio-form studio-inline-form" data-edit-student>' +
@@ -85,6 +85,7 @@
       '<details class="studio-inline-panel studio-editor-packages" '+(diapason ? 'hidden style="display:none"' : '')+'>' +
         '<summary>Percorsi · '+packages.length+'</summary>' +
         '<div data-edit-packages></div>' +
+      '</details>' +
       '</details>' +
       '<details class="studio-inline-panel studio-editor-lessons" open>' +
         '<summary>Lezioni, note e link · '+lessons.length+'</summary>' +
