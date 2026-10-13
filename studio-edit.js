@@ -65,7 +65,7 @@
     section.innerHTML =
       '<p class="content-kicker"><span>Modifica</span> · Scheda completa</p>' +
       '<h2>Gestisci allievo.</h2>' +
-      '<details class="studio-inline-panel" open>' +
+      '<details class="studio-inline-panel studio-editor-profile" open>' +
         '<summary>Dati allievo</summary>' +
         '<form class="studio-form studio-inline-form" data-edit-student>' +
           '<input type="hidden" name="student_id" value="'+esc(student.id)+'">' +
@@ -82,11 +82,11 @@
           '<p class="studio-status" data-edit-status role="status"></p>' +
         '</form>' +
       '</details>' +
-      '<details class="studio-inline-panel" '+(diapason ? 'hidden style="display:none"' : '')+'>' +
+      '<details class="studio-inline-panel studio-editor-packages" '+(diapason ? 'hidden style="display:none"' : '')+'>' +
         '<summary>Percorsi · '+packages.length+'</summary>' +
         '<div data-edit-packages></div>' +
       '</details>' +
-      '<details class="studio-inline-panel" open>' +
+      '<details class="studio-inline-panel studio-editor-lessons" open>' +
         '<summary>Lezioni, note e link · '+lessons.length+'</summary>' +
         '<div data-edit-lessons></div>' +
       '</details>' +
@@ -154,9 +154,9 @@
             '<option value="annullata" '+(lesson.stato==="annullata"?"selected":"")+'>Annullata</option>' +
           '</select></label>' +
           '<label data-private-lesson-field><span>Focus / argomenti</span><input name="focus" value="'+esc(lesson.focus)+'"></label>' +
-          '<label class="private-field" data-private-lesson-field><span>Note private · solo docente</span><textarea rows="4" name="note_private">'+esc(lessonNoteMap.get(lesson.id) || "")+'</textarea></label>' +
-          '<label><span>'+(diapason ? 'Note per l’allievo' : 'Riepilogo / note per l’allievo')+'</span><textarea rows="6" name="riepilogo_allievo">'+esc(diapason ? school.schoolSharedText(lesson) : lesson.riepilogo_allievo)+'</textarea></label>' +
-          '<label data-private-lesson-field><span>Da fare / esercizi</span><textarea rows="3" name="esercizi">'+esc(lesson.esercizi)+'</textarea></label>' +
+          '<label class="private-field studio-field-wide" data-private-lesson-field><span>Note private · solo docente</span><textarea rows="4" name="note_private">'+esc(lessonNoteMap.get(lesson.id) || "")+'</textarea></label>' +
+          '<label class="studio-field-wide"><span>'+(diapason ? 'Note per l’allievo' : 'Riepilogo / note per l’allievo')+'</span><textarea rows="6" name="riepilogo_allievo">'+esc(diapason ? school.schoolSharedText(lesson) : lesson.riepilogo_allievo)+'</textarea></label>' +
+          '<label class="studio-field-wide" data-private-lesson-field><span>Da fare / esercizi</span><textarea rows="3" name="esercizi">'+esc(lesson.esercizi)+'</textarea></label>' +
           '<label data-private-lesson-field><span>Registrazione Drive</span><input type="url" name="recording_url" value="'+esc(lesson.recording_url)+'"></label>' +
           '<label data-private-lesson-field><span>Trascrizione</span><input type="url" name="transcript_url" value="'+esc(lesson.transcript_url)+'"></label>' +
           '<label data-private-lesson-field><span>Materiali</span><input type="url" name="materials_url" value="'+esc(lesson.materials_url)+'"></label>' +
@@ -330,3 +330,4 @@
   window.addEventListener("hashchange", () => window.setTimeout(injectEditor, 120));
   window.setTimeout(injectEditor, 250);
 })();
+

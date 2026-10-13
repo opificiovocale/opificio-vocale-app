@@ -1,12 +1,12 @@
-const CACHE = "opificio-vocale-v54";
+const CACHE = "opificio-vocale-v55";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=35",
+  "./styles.css?v=36",
   "./app.js?v=20",
   "./studio-config.js?v=1",
-  "./studio.js?v=22",
-  "./studio-edit.js?v=8",
+  "./studio.js?v=23",
+  "./studio-edit.js?v=9",
   "./manifesti.json",
   "./comunicazioni.json",
   "./manifest.webmanifest?v=7",
@@ -75,3 +75,4 @@ self.addEventListener("fetch", event => {
     }).catch(() => Response.error()))
   );
 });
+

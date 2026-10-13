@@ -306,7 +306,7 @@
       .filter(pkg => Math.max(0, pkg.incontri_totali - pkg.incontri_usati) <= 1)
       .sort((a, b) => (a.incontri_totali - a.incontri_usati) - (b.incontri_totali - b.incontri_usati));
     return `
-      <section class="page studio-page" aria-labelledby="studio-title">
+      <section class="page studio-page studio-page-overview" aria-labelledby="studio-title">
         <header class="studio-hero">
           <button class="back-button" type="button" data-route="home"><span aria-hidden="true">←</span> Home</button>
           <p class="eyebrow">Area riservata · Docente</p>
@@ -324,6 +324,7 @@
           <article class="studio-stat"><small>Percorsi attivi</small><strong>${activePackages.length}</strong><span>in corso</span></article>
         </section>
 
+        <div class="studio-overview-panels ${closingPackages.length ? "" : "is-single"}">
         <section class="studio-section" aria-labelledby="studio-today">
           <div class="studio-section-heading">
             <div>
@@ -376,6 +377,7 @@
           </div>
         </section>` : ""}
 
+        </div>
         <section class="studio-section studio-actions">
           <p class="content-kicker"><span>Accessi rapidi</span></p>
           <h2>Tutto a portata di mano.</h2>
@@ -408,20 +410,25 @@
     const students = data || [];
 
     return `
-      <section class="page studio-page" aria-labelledby="students-title">
+      <section class="page studio-page studio-page-directory" aria-labelledby="students-title">
         <header class="studio-compact-header">
           <button class="back-button" type="button" data-route="studio"><span aria-hidden="true">←</span> Studio</button>
           <p class="eyebrow">Studio · Allievi</p>
           <h1 id="students-title">Allievi.</h1>
           <p>${students.length} ${students.length === 1 ? "scheda" : "schede"} nel database.</p>
         </header>
-        <section class="studio-list">
+        <section class="studio-list" data-studio-directory>
+          <label class="studio-directory-search">
+            <span>Cerca una persona</span>
+            <input type="search" data-studio-directory-search placeholder="Nome, email o percorso" autocomplete="off">
+          </label>
+          <div class="studio-directory-grid">
           ${students.map(student => {
             const activePackage = (student.packages || []).find(p => p.stato === "attivo");
             const age = calculateAge(student.data_nascita);
             const initials = `${student.nome?.[0] || ""}${student.cognome?.[0] || ""}`.toUpperCase();
             return `
-              <button class="student-row" type="button" data-studio-student="${student.id}">
+              <button class="student-row" type="button" data-studio-student="${student.id}" data-studio-search="${escapeHTML([student.nome, student.cognome, student.email, ...(student.packages || []).map(pkg => pkg.nome_percorso), isDiapason(student) ? "Diapason" : ""].filter(Boolean).join(" "))}">
                 <span class="student-avatar" aria-hidden="true">${escapeHTML(initials || "OV")}</span>
                 <span>
                   <small>${escapeHTML([
@@ -436,7 +443,9 @@
               </button>`;
           }).join("") || '<div class="studio-empty"><p>Non hai ancora inserito allievi.</p></div>'}
 
-          <details class="studio-inline-panel">
+          </div>
+          <p class="studio-helper" data-directory-status role="status"></p>
+          <details class="studio-inline-panel studio-new-student">
             <summary>＋ Nuovo allievo</summary>
             <form class="studio-form studio-inline-form" data-studio-student-form>
               <div class="studio-form-row">
@@ -482,7 +491,7 @@
     const age = calculateAge(student.data_nascita);
 
     return `
-      <section class="page studio-page" aria-labelledby="student-title">
+      <section class="page studio-page studio-page-detail" aria-labelledby="student-title">
         <header class="studio-compact-header">
           <button class="back-button" type="button" data-route="studio-allievi"><span aria-hidden="true">←</span> Allievi</button>
           <p class="eyebrow">Scheda allievo</p>
@@ -542,7 +551,7 @@
           </details>
         </section>`}
 
-        <section class="studio-section">
+        <section class="studio-section studio-detail-history">
           <p class="content-kicker"><span>${diapason ? "Registro presenze" : "Storico"}</span></p>
           <h2>${diapason ? "Incontri." : "Lezioni."}</h2>
           <button class="primary-button" type="button" data-studio-new-lesson="${student.id}">＋ Nuova lezione</button>
@@ -575,7 +584,7 @@
     const selectedId = getSelectedStudentId() || students?.[0]?.id || "";
     const diapason = isDiapason((students || []).find(student => student.id === selectedId));
     return `
-      <section class="page studio-page" aria-labelledby="lesson-form-title">
+      <section class="page studio-page studio-page-lesson" aria-labelledby="lesson-form-title">
         <header class="studio-compact-header">
           <button class="back-button" type="button" data-route="studio"><span aria-hidden="true">←</span> Studio</button>
           <p class="eyebrow">Studio · Lezione</p>
@@ -602,9 +611,9 @@
           </div>
           <label><span>Stato</span><select name="stato"><option value="presente">Presente</option><option value="assente">Assente</option><option value="recupero">Recupero</option><option value="annullata">Annullata</option></select></label>
           <label data-private-lesson-field><span>Focus / argomenti</span><input name="focus" placeholder="Es. ritmo, articolazione, dinamiche"></label>
-          <label class="private-field" data-private-lesson-field><span>Note private · solo docente</span><textarea name="note_private" rows="4" placeholder="Queste note sono in una tabella separata e non sono leggibili dall’allievo."></textarea></label>
-          <label><span data-shared-note-label>${diapason ? "Note per l’allievo" : "Riepilogo per l’allievo"}</span><textarea name="riepilogo_allievo" rows="6" placeholder="${diapason ? "Argomenti, suggerimenti, cose da provare e link: scrivi tutto qui." : "Che cosa abbiamo esplorato oggi?"}"></textarea></label>
-          <label data-private-lesson-field><span>Da fare / esercizi</span><textarea name="esercizi" rows="3" placeholder="Indicazioni per il prossimo incontro."></textarea></label>
+          <label class="private-field studio-field-wide" data-private-lesson-field><span>Note private · solo docente</span><textarea name="note_private" rows="4" placeholder="Queste note sono in una tabella separata e non sono leggibili dall’allievo."></textarea></label>
+          <label class="studio-field-wide"><span data-shared-note-label>${diapason ? "Note per l’allievo" : "Riepilogo per l’allievo"}</span><textarea name="riepilogo_allievo" rows="6" placeholder="${diapason ? "Argomenti, suggerimenti, cose da provare e link: scrivi tutto qui." : "Che cosa abbiamo esplorato oggi?"}"></textarea></label>
+          <label class="studio-field-wide" data-private-lesson-field><span>Da fare / esercizi</span><textarea name="esercizi" rows="3" placeholder="Indicazioni per il prossimo incontro."></textarea></label>
           <label data-private-lesson-field><span>Registrazione Drive</span><input type="url" name="recording_url" placeholder="https://drive.google.com/..."></label>
           <label data-private-lesson-field><span>Trascrizione</span><input type="url" name="transcript_url" placeholder="https://drive.google.com/..."></label>
           <label data-private-lesson-field><span>Materiali</span><input type="url" name="materials_url" placeholder="https://drive.google.com/..."></label>
@@ -990,10 +999,59 @@
       </section>`;
   };
 
+  const workspaceNavigationMarkup = route => {
+    const items = [
+      ["studio", "Panoramica"], ["studio-allievi", "Allievi"],
+      ["studio-lezione", "Nuova lezione"], ["percorso", "Vista allievo"],
+      ["studio-reset", "Audio Reset"], ["reset-demo", "Test Reset"]
+    ];
+    return `<nav class="studio-workspace-nav" aria-label="Navigazione Studio">
+      ${items.map(([target, label]) => `<button type="button" data-route="${target}" aria-current="${route === target || (route === "studio-allievo" && target === "studio-allievi") ? "page" : "false"}">${label}</button>`).join("")}
+    </nav>`;
+  };
+
+  const workspaceDirectoryMarkup = students => `<aside class="studio-workspace-sidebar" aria-label="Schede allievi" data-studio-directory>
+    <p class="content-kicker"><span>Allievi</span> · ${students.length}</p>
+    <label class="studio-directory-search">
+      <span>Cerca una persona</span>
+      <input type="search" data-studio-directory-search placeholder="Nome o cognome" autocomplete="off">
+    </label>
+    <div class="studio-workspace-students">
+      ${students.map(student => {
+        const name = [student.nome, student.cognome].filter(Boolean).join(" ");
+        return `<button type="button" data-studio-student="${escapeHTML(student.id)}" data-studio-search="${escapeHTML(name)}" aria-current="${student.id === getSelectedStudentId() ? "true" : "false"}">
+          <strong>${escapeHTML(name)}</strong><small>${student.attivo ? "Scheda attiva" : "In pausa"}</small>
+        </button>`;
+      }).join("") || '<p class="studio-helper">Ancora nessuna scheda.</p>'}
+    </div>
+    <p class="studio-helper" data-directory-status role="status"></p>
+    <button class="studio-text-button" type="button" data-route="studio-allievi">Apri tutte le schede →</button>
+  </aside>`;
+
+  const workspaceMarkup = async (route, content) => {
+    if (profile?.role !== "admin") return `<div class="studio-workspace-content">${content}</div>`;
+    let directory = "";
+    if (["studio-allievo", "studio-lezione", "percorso"].includes(route)) {
+      try {
+        const { data, error } = await client.from("students")
+          .select("id,nome,cognome,attivo").order("nome").order("cognome");
+        if (!error) directory = workspaceDirectoryMarkup(data || []);
+      } catch {
+        // The directory is a shortcut; a failed read must not block the current form.
+      }
+    }
+    return `<div class="studio-workspace ${directory ? "has-directory" : ""}">
+      ${workspaceNavigationMarkup(route)}${directory}
+      <div class="studio-workspace-content">${content}</div>
+    </div>`;
+  };
+
   const renderStudio = async () => {
     if (!isStudioRoute()) return;
     if (uploadingReset) return;
     if (loading) { app.innerHTML = loadingMarkup(); return; }
+    const route = currentRoute();
+    const renderUserId = session?.user?.id;
     loading = true;
     app.innerHTML = loadingMarkup();
 
@@ -1012,7 +1070,7 @@
         profile = data;
       }
 
-      const route = currentRoute();
+      if (!isStudioRoute() || currentRoute() !== route || session?.user?.id !== renderUserId) return;
 
       if (profile.role !== "admin" && route !== "percorso") {
         if (location.hash !== "#percorso") {
@@ -1021,18 +1079,22 @@
         }
       }
 
-      if (route === "studio") app.innerHTML = await adminHomeMarkup();
-      else if (route === "studio-allievi") app.innerHTML = await studentsMarkup();
-      else if (route === "studio-allievo") app.innerHTML = await studentDetailMarkup(getSelectedStudentId());
-      else if (route === "studio-lezione") app.innerHTML = await lessonFormMarkup();
-      else if (route === "percorso") app.innerHTML = await studentPathMarkup();
-      else if (route === "reset-demo") app.innerHTML = await resetDemoMarkup();
-      else if (route === "studio-reset") app.innerHTML = await resetAudioAdminMarkup();
+      let content = "";
+      if (route === "studio") content = await adminHomeMarkup();
+      else if (route === "studio-allievi") content = await studentsMarkup();
+      else if (route === "studio-allievo") content = await studentDetailMarkup(getSelectedStudentId());
+      else if (route === "studio-lezione") content = await lessonFormMarkup();
+      else if (route === "percorso") content = await studentPathMarkup();
+      else if (route === "reset-demo") content = await resetDemoMarkup();
+      else if (route === "studio-reset") content = await resetAudioAdminMarkup();
+      const html = await workspaceMarkup(route, content);
+      if (isStudioRoute() && currentRoute() === route && session?.user?.id === renderUserId) app.innerHTML = html;
     } catch (error) {
       lastError = error?.message || "Errore inatteso.";
-      app.innerHTML = errorMarkup(lastError);
+      if (isStudioRoute() && currentRoute() === route && session?.user?.id === renderUserId) app.innerHTML = errorMarkup(lastError);
     } finally {
       loading = false;
+      if (isStudioRoute() && (currentRoute() !== route || session?.user?.id !== renderUserId)) window.setTimeout(renderStudio, 0);
     }
   };
 
@@ -1135,6 +1197,20 @@
 
 
   document.addEventListener("input", event => {
+    const directorySearch = event.target.closest("[data-studio-directory-search]");
+    if (directorySearch) {
+      const directory = directorySearch.closest("[data-studio-directory]");
+      const normalize = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("it").trim();
+      const query = normalize(directorySearch.value);
+      let visible = 0;
+      directory.querySelectorAll("[data-studio-search]").forEach(button => {
+        button.hidden = !normalize(button.dataset.studioSearch).includes(query);
+        if (!button.hidden) visible++;
+      });
+      const status = directory.querySelector("[data-directory-status]");
+      if (status) status.textContent = !query ? "" : visible ? `${visible} ${visible === 1 ? "persona trovata" : "persone trovate"}.` : "Nessun risultato. Prova un altro nome.";
+      return;
+    }
     const packageName = event.target.closest('[data-studio-package-form] input[name="nome_percorso"]');
     if (!packageName) return;
     const form = packageName.closest("[data-studio-package-form]");
@@ -1418,3 +1494,4 @@
 
   init();
 })();
+
