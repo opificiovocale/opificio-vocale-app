@@ -735,28 +735,45 @@ const pages = {
       ${homeHeroMarkup()}
       ${voiceCheckInMarkup()}
       <div class="communication-slot" data-communication-slot>${communicationMarkup()}</div>
+
+      <section class="home-inspiration" aria-labelledby="home-inspiration-title">
+        <div class="home-inspiration-inner">
+          <h2 id="home-inspiration-title">Per oggi</h2>
+          <div class="home-inspiration-visual">
+            <p class="home-inspiration-eyebrow">Un pensiero per accompagnarti</p>
+            <blockquote>“La voce non racconta soltanto chi siamo: partecipa a costruirlo.”</blockquote>
+            <span aria-hidden="true">—</span>
+          </div>
+          <h3>Un piccolo invito</h3>
+          <button type="button" class="home-inspiration-link" data-route="audioteca">
+            <span class="inspiration-play" aria-hidden="true">▶</span>
+            <span><strong>Fermati ad ascoltare</strong><small>Scopri le esperienze dell'Audioteca</small></span>
+            <span aria-hidden="true">›</span>
+          </button>
+        </div>
+      </section>
       <section class="home-sections" aria-labelledby="home-sections-title">
         <p class="eyebrow">Dentro Opificio</p>
-        <h2 id="home-sections-title">Tutto, da qui.</h2>
+        <h2 id="home-sections-title">Esplora</h2>
         <div class="home-section-grid">
           <button class="home-section-card teal-card" type="button" data-route="manifesti">
             <span class="section-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3.8h9.5L19 7.3v12.9H6z"/><path d="M15.5 3.8v3.7H19M9 11h7M9 14.5h7M9 18h5"/></svg></span>
-            <span><small>Podcast e testi</small><strong>Manifesti</strong></span>
+            <span><small>Idee, parole, prospettive</small><strong>Manifesti</strong></span>
             <span class="section-card-end">${newManifestoBadgeMarkup()}<span aria-hidden="true">→</span></span>
           </button>
           <button class="home-section-card terracotta-card" type="button" data-route="audioteca">
             <span class="section-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.2 13v-2a7.8 7.8 0 0 1 15.6 0v2"/><path d="M6.2 12.7H5a1.8 1.8 0 0 0-1.8 1.8v3A1.8 1.8 0 0 0 5 19.3h1.2zM17.8 12.7H19a1.8 1.8 0 0 1 1.8 1.8v3a1.8 1.8 0 0 1-1.8 1.8h-1.2z"/></svg></span>
-            <span><small>Esperienze audio</small><strong>Audioteca</strong></span>
+            <span><small>Meditazioni e risorse</small><strong>Audioteca</strong></span>
             <span aria-hidden="true">→</span>
           </button>
           <button class="home-section-card mustard-card" type="button" data-route="percorsi">
             <span class="section-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 5.2h14M5 12h14M5 18.8h14"/><circle cx="8" cy="5.2" r="1.5"/><circle cx="15.5" cy="12" r="1.5"/><circle cx="11" cy="18.8" r="1.5"/></svg></span>
-            <span><small>Voce parlata e cantata</small><strong>Percorsi</strong></span>
+            <span><small>Programmi e pratiche</small><strong>Percorsi</strong></span>
             <span aria-hidden="true">→</span>
           </button>
           <button class="home-section-card studio-card" type="button" data-route="studio">
             <span class="section-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.5 6.5h15v13h-15z"/><path d="M8 6.5V4.7h8v1.8M8 11h8M8 15h5"/></svg></span>
-            <span><small>Area riservata</small><strong>Studio</strong></span>
+            <span><small>Le tue pratiche</small><strong>Studio</strong></span>
             <span aria-hidden="true">→</span>
           </button>
         </div>
@@ -1130,6 +1147,22 @@ document.addEventListener("click", event => {
     setCheckStep(form, Number(form.dataset.stepCurrent) - 1);
     return;
   }
+  const locationButton = event.target.closest("[data-voice-location]");
+  if (locationButton) {
+    const wasSelected = locationButton.getAttribute("aria-pressed") === "true";
+    locationButton.setAttribute("aria-pressed", String(!wasSelected));
+    return;
+  }
+  const diaryJump = event.target.closest("[data-open-voice-diary]");
+  if (diaryJump) {
+    const diary = document.querySelector("#voiceDiary .voice-diary");
+    if (diary) {
+      diary.open = true;
+      diary.scrollIntoView({ behavior: "smooth", block: "start" });
+      diary.querySelector("summary")?.focus({ preventScroll: true });
+    }
+    return;
+  }
   const facetButton = event.target.closest("[data-voice-facet]");
   if (facetButton) {
     const siblings = facetButton.closest(".voice-facet-options").querySelectorAll("[data-voice-facet]");
@@ -1227,7 +1260,7 @@ document.addEventListener("click", event => {
     const expanded = moreDiary.getAttribute("aria-expanded") !== "true";
     moreDiary.closest(".voice-diary").querySelectorAll("[data-diary-older]").forEach(row => { row.hidden = !expanded; });
     moreDiary.setAttribute("aria-expanded", String(expanded));
-    moreDiary.textContent = expanded ? "Mostra solo gli ultimi 7 giorni" : "Mostra i giorni precedenti";
+    moreDiary.textContent = expanded ? "Mostra le ultime 5 tracce" : "Vedi tutte le tracce →";
     return;
   }
 
@@ -1283,9 +1316,11 @@ document.addEventListener("submit", event => {
   const note = form.elements.voiceOwnWords.value.trim();
   const facets = Object.fromEntries([...form.querySelectorAll('[data-voice-facet][aria-pressed="true"]')]
     .map(button => [button.dataset.voiceFacet, button.dataset.voiceValue]));
+  const locations = [...form.querySelectorAll('[data-voice-location][aria-pressed="true"]')]
+    .map(button => button.dataset.voiceLocation);
   const status = form.querySelector("[data-selection-status]");
 
-  if (!words.length && !note && !Object.keys(facets).length) {
+  if (!words.length && !note && !locations.length && !Object.keys(facets).length) {
     setCheckStep(form, 0);
     status.textContent = "Scegli una parola, una sensazione o lascia una breve nota.";
     form.querySelector("[data-voice-word]")?.focus();
@@ -1297,6 +1332,7 @@ document.addEventListener("submit", event => {
     words,
     note,
     facets: safeVoiceFacets(facets),
+    locations: safeVoiceLocations(locations),
     intent: voiceIntent({ intent: form.elements.voiceIntent?.value }),
     updatedAt: new Date().toISOString()
   };
