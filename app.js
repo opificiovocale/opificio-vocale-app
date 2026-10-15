@@ -1035,6 +1035,23 @@ function render({ focus = false } = {}) {
   if (focus) app.focus({ preventScroll: true });
 }
 
+function setCheckStep(form, index) {
+  const step = Math.min(2, Math.max(0, index));
+  form.dataset.stepCurrent = String(step);
+  form.querySelectorAll("[data-check-step]").forEach(panel => {
+    panel.hidden = Number(panel.dataset.checkStep) !== step;
+  });
+  form.querySelector("[data-check-step-count]").textContent = `0${step + 1} / 03`;
+  form.querySelectorAll("[data-step-dot]").forEach((dot, i) => {
+    dot.classList.toggle("is-active", i <= step);
+  });
+  form.querySelector("[data-check-back]").hidden = step === 0;
+  form.querySelector("[data-check-next]").hidden = step === 2;
+  form.querySelector(".check-submit").hidden = step !== 2;
+  form.querySelector("[data-selection-status]").hidden = step !== 0;
+  form.querySelector(".check-step:not([hidden]) h3")?.focus({ preventScroll: true });
+}
+
 document.addEventListener("click", event => {
   if (event.target.closest("[data-podcast-open]")) { openPodcastPlayer(); return; }
   const playerToggle = event.target.closest("[data-podcast-toggle]");
@@ -1055,7 +1072,28 @@ document.addEventListener("click", event => {
     document.querySelector("[data-check-complete]").hidden = true;
     document.querySelector("#voiceReflection").hidden = true;
     window.clearInterval(minuteInterval);
+    setCheckStep(form, 0);
     form.querySelector("[data-voice-word]")?.focus();
+    return;
+  }
+  const nextCheck = event.target.closest("[data-check-next]");
+  if (nextCheck) {
+    const form = nextCheck.closest("#voiceCheckIn");
+    setCheckStep(form, Number(form.dataset.stepCurrent) + 1);
+    return;
+  }
+  const backCheck = event.target.closest("[data-check-back]");
+  if (backCheck) {
+    const form = backCheck.closest("#voiceCheckIn");
+    setCheckStep(form, Number(form.dataset.stepCurrent) - 1);
+    return;
+  }
+  const facetButton = event.target.closest("[data-voice-facet]");
+  if (facetButton) {
+    const siblings = facetButton.closest(".voice-facet-options").querySelectorAll("[data-voice-facet]");
+    const isPressed = facetButton.getAttribute("aria-pressed") === "true";
+    siblings.forEach(button => button.setAttribute("aria-pressed", "false"));
+    if (!isPressed) facetButton.setAttribute("aria-pressed", "true");
     return;
   }
   const moreWordsButton = event.target.closest("[data-more-voice-words]");
@@ -1201,10 +1239,13 @@ document.addEventListener("submit", event => {
   const words = [...form.querySelectorAll("[data-voice-word][aria-pressed='true']")]
     .map(button => button.dataset.voiceWord);
   const note = form.elements.voiceOwnWords.value.trim();
+  const facets = Object.fromEntries([...form.querySelectorAll('[data-voice-facet][aria-pressed="true"]')]
+    .map(button => [button.dataset.voiceFacet, button.dataset.voiceValue]));
   const status = form.querySelector("[data-selection-status]");
 
-  if (!words.length && !note) {
-    status.textContent = "Scegli almeno una parola oppure scrivi come la senti.";
+  if (!words.length && !note && !Object.keys(facets).length) {
+    setCheckStep(form, 0);
+    status.textContent = "Scegli una parola, una sensazione o lascia una breve nota.";
     form.querySelector("[data-voice-word]")?.focus();
     return;
   }
@@ -1213,6 +1254,7 @@ document.addEventListener("submit", event => {
     date: localDayKey(),
     words,
     note,
+    facets: safeVoiceFacets(facets),
     intent: voiceIntent({ intent: form.elements.voiceIntent?.value }),
     updatedAt: new Date().toISOString()
   };
@@ -1221,7 +1263,7 @@ document.addEventListener("submit", event => {
   document.querySelector("#voiceReflection").innerHTML = voiceReflectionMarkup(entry);
   document.querySelector("#voiceReflection").hidden = false;
   document.querySelector("#voiceDiary").innerHTML = voiceDiaryMarkup();
-  form.querySelector(".check-submit").innerHTML = "Aggiorna il mio ascolto <span aria-hidden=\"true\">→</span>";
+  form.querySelector(".check-submit").innerHTML = "Aggiorna la traccia <span aria-hidden=\"true\">→</span>";
   if (saved) {
     form.hidden = true;
     document.querySelector("[data-check-complete]").hidden = false;
@@ -1279,7 +1321,7 @@ if ("serviceWorker" in navigator) {
 
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./sw.js?v=33");
+      const registration = await navigator.serviceWorker.register("./sw.js?v=34");
       await registration.update();
     } catch {}
   });
