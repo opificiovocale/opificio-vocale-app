@@ -45,7 +45,8 @@ async function main() {
       await page.locator('[data-voice-facet="body"][data-voice-value="comoda"]').click();
       await page.locator('[data-check-next]').click();
       assert.ok(await page.locator('[data-check-step="2"]').isVisible(), 'Step 3 should show');
-      await page.locator('input[name="voiceIntent"][value="explore"]').check();
+      await page.locator('label.voice-intent-card.intent-explore').click();
+      assert.equal(await page.locator('input[name="voiceIntent"][value="explore"]').isChecked(), true, 'Intent card selects explore');
       await page.locator('[data-check-back]').click();
       assert.ok(await page.locator('[data-check-step="1"]').isVisible(), 'Back should work');
       await page.locator('[data-check-next]').click();
