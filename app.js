@@ -29,6 +29,36 @@ const VOICE_WORD_TONES = {
 const VOICE_WORDS = Object.values(VOICE_WORD_TONES).flat();
 let voiceWordPage = 0;
 
+
+const VOICE_FACETS = {
+  body: { label: "Nel corpo", description: "Come percepisci il gesto di parlare?", options: ["comoda", "tesa", "affaticata", "non so"] },
+  sound: { label: "Nel suono", description: "Quale qualità ti arriva di più?", options: ["leggera", "piena", "ruvida", "mutevole", "non so"] },
+  relation: { label: "Nella relazione", description: "Come senti la tua voce quando incontra le altre persone?", options: ["vicina", "distante", "presente", "incerta", "non so"] }
+};
+function safeVoiceFacets(value) {
+  if (!value || typeof value !== "object") return {};
+  return Object.fromEntries(Object.entries(VOICE_FACETS)
+    .filter(([key, group]) => group.options.includes(value[key]))
+    .map(([key]) => [key, value[key]]));
+}
+function voiceFacetsMarkup(selected = {}) {
+  return Object.entries(VOICE_FACETS).map(([key, group]) => `
+    <fieldset class="voice-facet-group">
+      <legend>${group.label}</legend>
+      <p>${group.description}</p>
+      <div class="voice-facet-options">
+        ${group.options.map(value => `
+          <button type="button" class="voice-facet-button" data-voice-facet="${key}" data-voice-value="${escapeHTML(value)}" aria-pressed="${selected[key] === value}">
+            ${escapeHTML(value)}
+          </button>`).join("")}
+      </div>
+    </fieldset>`).join("");
+}
+function voiceFacetSummary(entry) {
+  const facets = safeVoiceFacets(entry?.facets);
+  return Object.entries(facets).map(([key, value]) => `${VOICE_FACETS[key].label}: ${value}`);
+}
+
 const VOICE_DIARY_KEY = "opificio-voice-diary-v1";
 const VOICE_INTENTS = { listen: "Ascoltarmi", explore: "Esplorare", note: "Lasciare una traccia" };
 const voiceIntent = entry => Object.hasOwn(VOICE_INTENTS, entry.intent) ? entry.intent : "listen";
@@ -420,6 +450,7 @@ function loadVoiceDiary() {
         ...entry,
         words: Array.isArray(entry.words) ? [...new Set(entry.words.filter(word => VOICE_WORDS.includes(word)))].slice(0, 3) : [],
         note: typeof entry.note === "string" ? entry.note.slice(0, 140) : "",
+        facets: safeVoiceFacets(entry.facets),
         intent: voiceIntent(entry)
       }))
       .sort((a, b) => b.date.localeCompare(a.date))
@@ -441,7 +472,13 @@ function saveVoiceEntry(entry) {
 }
 
 function reflectionType(entry) {
-  if (!entry.words.length || entry.words.includes("non lo so")) return "unknown";
+  if (entry.words.includes("non lo so")) return "unknown";
+  if (!entry.words.length) {
+    if (entry.facets?.body === "tesa") return "tense";
+    if (entry.facets?.body === "affaticata") return "tired";
+    if (entry.facets?.sound === "piena" || entry.facets?.relation === "presente") return "open";
+    return "unknown";
+  }
   const hasGentle = entry.words.some(word => VOICE_WORD_TONES.gentle.includes(word));
   const hasOpen = entry.words.some(word => VOICE_WORD_TONES.open.includes(word));
   if (entry.words.some(word => ["stanca", "affaticata", "spenta"].includes(word))) return "tired";
@@ -479,12 +516,20 @@ function voiceReflectionMarkup(entry) {
   const ownWords = entry.note
     ? `<p class="own-words">“${escapeHTML(entry.note)}”</p>`
     : "";
+  const observations = voiceFacetSummary(entry);
+  const facetsMarkup = observations.length
+    ? `<div class="reflection-observations"><p>Hai osservato anche</p><div>${observations.map(value => `<span>${escapeHTML(value)}</span>`).join("")}</div></div>`
+    : "";
+  const previous = loadVoiceDiary().find(item => item.date < entry.date);
+  const diaryComparison = previous
+    ? `<p class="reflection-previous">Nella traccia del ${formatDiaryDate(previous.date)} avevi scelto: ${previous.words.length ? previous.words.map(escapeHTML).join(" · ") : "altre sensazioni"}. Non è un confronto di risultati, solo un modo per riconoscere ciò che cambia.</p>`
+    : "";
 
   return `
     <section class="voice-reflection ${type}" data-voice-intent="${intent}" tabindex="-1" aria-labelledby="reflection-title">
       <p class="content-kicker"><span>${intent === "note" ? "La tua traccia" : intent === "listen" ? "Ascoltarmi · senza voce" : "Esplorare · una piccola prova"}</span></p>
       <h3 id="reflection-title">${reflection.title}</h3>
-      ${words}${ownWords}
+      ${words}${ownWords}${facetsMarkup}
       <p class="reflection-copy">${reflection.copy}</p>
       ${intent === "note" ? "" : `
       <div class="micro-practice" data-reflection-practice>
@@ -499,6 +544,7 @@ function voiceReflectionMarkup(entry) {
         </button>
         <p class="minute-status" data-minute-status aria-live="polite"></p>
       </div>`}
+      ${diaryComparison}
       <p class="proposal-note">${intent === "note" ? "Questa traccia resta su questo dispositivo. Puoi modificarla quando vuoi." : "Uno spunto generale, non una valutazione della tua voce. Puoi fermarti o saltarlo in qualsiasi momento."}</p>
     </section>`;
 }
@@ -520,7 +566,7 @@ function voiceDiaryMarkup() {
         ${diary.map((entry, index) => `
           <li ${index >= 7 ? 'data-diary-older hidden' : ''}>
             <time datetime="${escapeHTML(entry.date)}">${formatDiaryDate(entry.date)}</time>
-            <span class="diary-entry">${entry.words.length ? `<span>${entry.words.map(escapeHTML).join(" · ")}</span>` : ""}${entry.note ? `<span class="diary-note">${escapeHTML(entry.note)}</span>` : ""}</span>
+            <span class="diary-entry">${entry.words.length ? `<span>${entry.words.map(escapeHTML).join(" · ")}</span>` : ""}${voiceFacetSummary(entry).length ? `<small>${voiceFacetSummary(entry).map(escapeHTML).join(" · ")}</small>` : ""}${entry.note ? `<span class="diary-note">${escapeHTML(entry.note)}</span>` : ""}</span>
           </li>`).join("")}
       </ol>
       ${diary.length > 7 ? '<button class="diary-more" type="button" data-diary-more aria-expanded="false">Mostra i giorni precedenti</button>' : ''}
@@ -846,6 +892,7 @@ function exportVoiceDiary() {
     ...diary.flatMap(entry => [
       formatDiaryDate(entry.date),
       entry.words.length ? entry.words.join(" · ") : "",
+      voiceFacetSummary(entry).join(" · "),
       entry.note || "",
       ""
     ].filter((line, index) => line || index === 3))
