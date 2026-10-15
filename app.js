@@ -472,13 +472,7 @@ function saveVoiceEntry(entry) {
 }
 
 function reflectionType(entry) {
-  if (entry.words.includes("non lo so")) return "unknown";
-  if (!entry.words.length) {
-    if (entry.facets?.body === "tesa") return "tense";
-    if (entry.facets?.body === "affaticata") return "tired";
-    if (entry.facets?.sound === "piena" || entry.facets?.relation === "presente") return "open";
-    return "unknown";
-  }
+  if (!entry.words.length || entry.words.includes("non lo so")) return "unknown";
   const hasGentle = entry.words.some(word => VOICE_WORD_TONES.gentle.includes(word));
   const hasOpen = entry.words.some(word => VOICE_WORD_TONES.open.includes(word));
   if (entry.words.some(word => ["stanca", "affaticata", "spenta"].includes(word))) return "tired";
