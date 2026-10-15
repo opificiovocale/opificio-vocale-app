@@ -39,6 +39,9 @@ async function main() {
       await page.locator('[data-voice-word]').first().click();
       await page.locator('[data-check-next]').click();
       assert.ok(await page.locator('[data-check-step="1"]').isVisible(), 'Step 2 should show');
+      await page.locator('[data-voice-location="gola"]').click();
+      await page.locator('[data-voice-location="petto"]').click();
+      await page.locator('.voice-additional-observations summary').click();
       await page.locator('[data-voice-facet="body"][data-voice-value="comoda"]').click();
       await page.locator('[data-check-next]').click();
       assert.ok(await page.locator('[data-check-step="2"]').isVisible(), 'Step 3 should show');
@@ -48,9 +51,10 @@ async function main() {
       await page.locator('[data-check-next]').click();
       await page.locator('.check-submit').click();
       assert.ok(await page.locator('[data-check-complete]').isVisible(), 'Check-in saved');
-      assert.ok(await page.locator('#voiceReflection .reflection-observations').isVisible(), 'Reflection contains observations');
+      assert.ok(await page.locator('#voiceReflection .reflection-summary').isVisible(), 'Reflection contains observations');
       const entry = await page.evaluate(() => JSON.parse(localStorage.getItem('opificio-voice-diary-v1'))?.[0]);
       assert.equal(entry.facets.body, 'comoda');
+      assert.deepEqual(entry.locations, ['gola','petto']);
       assert.equal(entry.intent, 'explore');
       try {
         await page.screenshot({ path: path.join(output, size.name + '-result.png'), fullPage: false, animations: 'disabled', timeout: 8000 });
@@ -60,6 +64,8 @@ async function main() {
       await page.locator('[data-check-edit]').click();
       assert.ok(await page.locator('[data-check-step="0"]').isVisible(), 'Editing starts at first step');
       await page.locator('[data-check-next]').click();
+      assert.equal(await page.locator('[data-voice-location="gola"]').getAttribute('aria-pressed'), 'true', 'Selected location should reload');
+      await page.locator('.voice-additional-observations summary').click();
       assert.equal(await page.locator('[data-voice-facet="body"][data-voice-value="comoda"]').getAttribute('aria-pressed'), 'true', 'Selected facet should reload');
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       await page.waitForTimeout(300);
@@ -76,6 +82,7 @@ async function main() {
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
     await page.evaluate(day => localStorage.setItem('opificio-voice-diary-v1', JSON.stringify([{date:day, words:['tesa'], note:'Vecchia nota', intent:'listen', updatedAt:new Date().toISOString()}])), yesterday);
     await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('.voice-diary summary').waitFor({ state: 'visible', timeout: 15000 });
     assert.ok(await page.locator('.voice-diary').isVisible(), 'Legacy diary should still appear');
     await page.locator('.voice-diary summary').click();
     assert.ok((await page.locator('.voice-diary').innerText()).includes('Vecchia nota'));
@@ -86,7 +93,6 @@ async function main() {
     await page.locator('[data-check-next]').click();
     await page.locator('.check-submit').click();
     assert.ok(await page.locator('.reflection-previous').isVisible(), 'Old entries should be part of comparison');
-    await page.locator('.voice-diary summary').click();
     const [download] = await Promise.all([page.waitForEvent('download'), page.locator('[data-diary-export]').click()]);
     assert.match(download.suggestedFilename(), /diario-della-voce/);
     assert.equal((await page.evaluate(() => JSON.parse(localStorage.getItem('opificio-voice-diary-v1')))).length, 2, 'Old and new entries retained');
