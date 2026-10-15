@@ -21,7 +21,7 @@ const external = (href, label, subtitle, mark = "↗") => `
 
 const VOICE_WORD_TONES = {
   gentle: ["stanca", "tesa", "fragile", "trattenuta", "lontana", "impastata", "piccola", "incerta", "spenta", "affaticata"],
-  open: ["libera", "viva", "curiosa", "presente", "potente", "morbida", "luminosa", "stabile", "ampia", "disponibile"],
+  open: ["libera", "aperta", "viva", "curiosa", "presente", "potente", "morbida", "luminosa", "stabile", "ampia", "disponibile"],
   mixed: ["ruvida", "piena", "sottile", "mobile", "irrequieta", "sospesa", "diversa", "in trasformazione", "carica", "vuota"],
   unknown: ["non lo so"]
 };
@@ -59,6 +59,8 @@ function voiceFacetSummary(entry) {
   return Object.entries(facets).map(([key, value]) => `${VOICE_FACETS[key].label}: ${value}`);
 }
 
+const VOICE_LOCATIONS = ["testa", "viso", "gola", "petto", "diaframma", "corpo intero"];
+const safeVoiceLocations = value => Array.isArray(value) ? [...new Set(value.filter(item => VOICE_LOCATIONS.includes(item)))].slice(0, 6) : [];
 const VOICE_DIARY_KEY = "opificio-voice-diary-v1";
 const VOICE_INTENTS = { listen: "Ascoltarmi", explore: "Esplorare", note: "Lasciare una traccia" };
 const voiceIntent = entry => Object.hasOwn(VOICE_INTENTS, entry.intent) ? entry.intent : "listen";
@@ -451,6 +453,7 @@ function loadVoiceDiary() {
         words: Array.isArray(entry.words) ? [...new Set(entry.words.filter(word => VOICE_WORDS.includes(word)))].slice(0, 3) : [],
         note: typeof entry.note === "string" ? entry.note.slice(0, 140) : "",
         facets: safeVoiceFacets(entry.facets),
+        locations: safeVoiceLocations(entry.locations),
         intent: voiceIntent(entry)
       }))
       .sort((a, b) => b.date.localeCompare(a.date))
@@ -578,11 +581,13 @@ function rotatedVoiceWords(words, start, count) {
 function voiceWordChoices(selected = []) {
   const daySeed = Math.floor(new Date(`${localDayKey()}T12:00:00`).getTime() / 86400000);
   const offset = daySeed + voiceWordPage * 4;
-  const suggestions = [
-    ...rotatedVoiceWords(VOICE_WORD_TONES.gentle, offset, 2),
-    ...rotatedVoiceWords(VOICE_WORD_TONES.open, offset + 2, 2),
-    ...rotatedVoiceWords(VOICE_WORD_TONES.mixed, offset + 4, 2)
-  ];
+  const suggestions = voiceWordPage === 0
+    ? ["tesa", "fragile", "presente", "potente", "sospesa", "curiosa", "stanca", "aperta", "trattenuta", "libera", "diversa"]
+    : [
+      ...rotatedVoiceWords(VOICE_WORD_TONES.gentle, offset, 3),
+      ...rotatedVoiceWords(VOICE_WORD_TONES.open, offset + 2, 3),
+      ...rotatedVoiceWords(VOICE_WORD_TONES.mixed, offset + 4, 3)
+    ];
   return [...new Set([...suggestions, ...selected, "non lo so"])];
 }
 
@@ -922,6 +927,7 @@ function exportVoiceDiary() {
       formatDiaryDate(entry.date),
       entry.words.length ? entry.words.join(" · ") : "",
       voiceFacetSummary(entry).join(" · "),
+      safeVoiceLocations(entry.locations).join(" · "),
       entry.note || "",
       ""
     ].filter((line, index) => line || index === 3))
