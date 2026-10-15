@@ -605,58 +605,93 @@ function voiceCheckInMarkup() {
   return `
     <section class="voice-check-section" id="voice-check" aria-labelledby="voice-check-title">
       <div class="check-intro">
-        <p class="eyebrow">Un minuto di ascolto</p>
-        <h2 id="voice-check-title">Dalle una parola.</h2>
-        <p>Scegli fino a tre parole oppure scrivila come viene. Non c’è una risposta giusta.</p>
+        <p class="eyebrow">Il tuo spazio di ascolto</p>
+        <h2 id="voice-check-title">Comincia da come la senti.</h2>
+        <p>Tre piccoli passaggi per osservare la tua voce. Nessun voto, nessuna voce ideale da raggiungere.</p>
       </div>
       <div class="check-complete" data-check-complete ${today ? "" : "hidden"}>
-        <p>Il tuo ascolto di oggi è qui.</p>
+        <p>La tua traccia di oggi è nel diario. Puoi tornare ad ascoltarti quando vuoi.</p>
         <button class="check-edit-button" type="button" data-check-edit aria-controls="voiceCheckIn">
-          <span>Modifica le parole o la proposta</span><span class="check-edit-icon" aria-hidden="true">↺</span>
+          <span>Rivedi il tuo ascolto</span><span class="check-edit-icon" aria-hidden="true">↗</span>
         </button>
       </div>
-      <form class="voice-check-card" id="voiceCheckIn" novalidate ${today ? "hidden" : ""}>
-        <fieldset>
-          <legend>Come la senti?</legend>
-          <div class="voice-words">
-            ${voiceWordButtonsMarkup(selected)}
+      <form class="voice-check-card" id="voiceCheckIn" data-step-current="0" novalidate ${today ? "hidden" : ""}>
+        <div class="check-progress">
+          <span class="check-progress-label">Il tuo check-in <strong data-check-step-count>01 / 03</strong></span>
+          <div class="check-progress-track" aria-hidden="true"><span data-step-dot class="is-active"></span><span data-step-dot></span><span data-step-dot></span></div>
+        </div>
+        <div class="check-step" data-check-step="0">
+          <div class="check-step-heading">
+            <p>01 — Sentire</p>
+            <h3 tabindex="-1">Quali parole le daresti?</h3>
+            <span>Scegline fino a tre. Puoi anche non sapere ancora come descriverla.</span>
           </div>
-          <div class="voice-words-tools">
-            <button class="voice-more" type="button" data-more-voice-words>Altre parole ↻</button>
+          <fieldset>
+            <legend class="visually-hidden">Come senti la tua voce?</legend>
+            <div class="voice-words">${voiceWordButtonsMarkup(selected)}</div>
+            <div class="voice-words-tools"><button class="voice-more" type="button" data-more-voice-words>Altre parole ↻</button></div>
+          </fieldset>
+        </div>
+        <div class="check-step" data-check-step="1" hidden>
+          <div class="check-step-heading">
+            <p>02 — Osservare</p>
+            <h3 tabindex="-1">Cosa noti nella tua voce?</h3>
+            <span>Se ti va, prova a dire «Eccomi, questa è la mia voce oggi». Non cerchiamo una misura: ascoltiamo la tua percezione.</span>
           </div>
-        </fieldset>
-        <details class="own-words-details" ${today?.note ? "open" : ""}>
-        <summary>Oppure usa parole tue</summary>
-        <label class="own-words-label" for="voiceOwnWords">La tua nota</label>
-        <textarea id="voiceOwnWords" name="voiceOwnWords" maxlength="140" rows="3" placeholder="Per esempio: impastata, lontana, pronta a uscire…">${escapeHTML(today?.note || "")}</textarea>
-        <p class="proposal-note">Le note restano nel tuo diario: non vengono interpretate per scegliere una proposta.</p>
-        </details>
-        <fieldset class="voice-intents" aria-describedby="voiceIntentDescription">
-          <legend>Oggi mi va di…</legend>
-          ${Object.entries(VOICE_INTENTS).map(([value, label]) => `<label><input type="radio" name="voiceIntent" value="${value}" ${voiceIntent(today || {}) === value ? "checked" : ""}><span>${label}</span></label>`).join("")}
-        </fieldset>
-        <p class="intent-description" id="voiceIntentDescription" data-intent-description aria-live="polite">${VOICE_INTENT_DESCRIPTIONS[voiceIntent(today || {})]}</p>
-        <p class="selection-status" data-selection-status aria-live="polite">${selected.size ? `${selected.size} ${selected.size === 1 ? "parola scelta" : "parole scelte"}` : "Puoi scegliere fino a 3 parole."}</p>
-        <button class="primary-button check-submit" type="submit">
-          ${today ? "Aggiorna il mio ascolto" : "Continua"} <span aria-hidden="true">→</span>
-        </button>
-        <p class="privacy-note"><span aria-hidden="true">○</span> Resta soltanto su questo dispositivo.</p>
+          <div class="voice-facets">${voiceFacetsMarkup(today?.facets || {})}</div>
+          <p class="check-optional">Puoi lasciare queste risposte aperte e proseguire.</p>
+        </div>
+        <div class="check-step" data-check-step="2" hidden>
+          <div class="check-step-heading">
+            <p>03 — Scegliere</p>
+            <h3 tabindex="-1">Di cosa hai bisogno oggi?</h3>
+            <span>Puoi fermarti all'ascolto oppure esplorare una piccola possibilità.</span>
+          </div>
+          <fieldset class="voice-intents" aria-describedby="voiceIntentDescription">
+            <legend>Oggi mi va di…</legend>
+            ${Object.entries(VOICE_INTENTS).map(([value, label]) => `<label><input type="radio" name="voiceIntent" value="${value}" ${voiceIntent(today || {}) === value ? "checked" : ""}><span>${label}</span></label>`).join("")}
+          </fieldset>
+          <p class="intent-description" id="voiceIntentDescription" data-intent-description aria-live="polite">${VOICE_INTENT_DESCRIPTIONS[voiceIntent(today || {})]}</p>
+          <details class="own-words-details" ${today?.note ? "open" : ""}>
+            <summary>Vuoi lasciare anche una frase?</summary>
+            <label class="own-words-label" for="voiceOwnWords">La tua nota, se vuoi</label>
+            <textarea id="voiceOwnWords" name="voiceOwnWords" maxlength="140" rows="3" placeholder="Oggi la mia voce…">${escapeHTML(today?.note || "")}</textarea>
+            <p class="proposal-note">Questa nota resta nel diario. Non viene analizzata automaticamente.</p>
+          </details>
+        </div>
+        <p class="selection-status" data-selection-status aria-live="polite">${selected.size ? `${selected.size} ${selected.size === 1 ? "parola scelta" : "parole scelte"}` : "Puoi scegliere fino a tre parole."}</p>
+        <div class="check-actions">
+          <button class="check-back" type="button" data-check-back hidden>← Indietro</button>
+          <button class="primary-button check-next" type="button" data-check-next>Continua <span aria-hidden="true">→</span></button>
+          <button class="primary-button check-submit" type="submit" hidden>${today ? "Aggiorna la traccia" : "Conserva la traccia"} <span aria-hidden="true">→</span></button>
+        </div>
+        <p class="privacy-note"><span aria-hidden="true">◌</span> La tua traccia rimane su questo dispositivo.</p>
       </form>
       <div id="voiceReflection" aria-live="polite">${today ? voiceReflectionMarkup(today) : ""}</div>
       <div id="voiceDiary">${voiceDiaryMarkup()}</div>
     </section>`;
 }
 
+function homeHeroMarkup() {
+  const today = loadVoiceDiary().find(entry => entry.date === localDayKey());
+  const n = loadVoiceDiary().length;
+  return `
+    <section class="voice-hero" aria-labelledby="home-title">
+      <div class="voice-hero-copy">
+        <p class="eyebrow">OPIFICIO VOCALE <span aria-hidden="true">·</span> UNO SPAZIO PER TE</p>
+        <h1 id="home-title">La tua voce.<br><em>Oggi.</em></h1>
+        <p>Ogni voce cambia. Qui puoi fermarti, ascoltarla e scoprire qualcosa di nuovo.</p>
+        <button class="home-start-button" type="button" data-check-start>${today ? "Ritrova la tua traccia" : "Inizia ad ascoltarti"} <span aria-hidden="true">↗</span></button>
+        <div class="home-hero-meta"><span>Un paio di minuti, senza giudizi</span>${n ? `<span>${n} ${n === 1 ? "traccia" : "tracce"} nel diario</span>` : ""}</div>
+      </div>
+      <div class="home-hero-art" aria-hidden="true"><div class="home-hero-orbit orbit-one"></div><div class="home-hero-orbit orbit-two"></div><div class="home-hero-orbit orbit-three"></div><span>la voce<br>è un gesto.</span></div>
+    </section>`;
+}
+
 const pages = {
   home: () => `
     <section class="page home-page" aria-labelledby="home-title">
-      <section class="voice-hero">
-        <div class="voice-hero-copy">
-          <p class="eyebrow">Uno spazio per la tua voce</p>
-          <h1 id="home-title">Oggi la tua voce<br><em>come sta?</em></h1>
-          <p>Partiamo da come la senti.</p>
-        </div>
-      </section>
+      ${homeHeroMarkup()}
       ${voiceCheckInMarkup()}
       <div class="communication-slot" data-communication-slot>${communicationMarkup()}</div>
       <section class="home-sections" aria-labelledby="home-sections-title">
