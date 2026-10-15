@@ -70,7 +70,9 @@ async function main() {
     await page.evaluate(day => localStorage.setItem('opificio-voice-diary-v1', JSON.stringify([{date:day, words:['tesa'], note:'Vecchia nota', intent:'listen', updatedAt:new Date().toISOString()}])), yesterday);
     await page.reload({waitUntil:'domcontentloaded'});
     assert.ok(await page.locator('.voice-diary').isVisible(), 'Legacy diary should still appear');
+    await page.locator('.voice-diary summary').click();
     assert.ok((await page.locator('.voice-diary').innerText()).includes('Vecchia nota'));
+    await page.locator('.voice-diary summary').click();
     await page.locator('[data-check-start]').click();
     await page.locator('[data-voice-word]').first().click();
     await page.locator('[data-check-next]').click();
