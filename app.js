@@ -507,42 +507,52 @@ function voiceReflectionMarkup(entry) {
   const type = reflectionType(entry);
   const reflection = reflectionFor(entry, type);
   const intent = voiceIntent(entry);
-  const words = entry.words.length
-    ? `<p class="chosen-words">${entry.words.map(escapeHTML).join(" · ")}</p>`
-    : "";
-  const ownWords = entry.note
-    ? `<p class="own-words">“${escapeHTML(entry.note)}”</p>`
-    : "";
+  const words = entry.words.length ? entry.words.map(escapeHTML).join(", ") : "Parole ancora da trovare";
+  const locations = safeVoiceLocations(entry.locations);
+  const chosenLocations = locations.length ? locations.map(escapeHTML).join(", ") : "Non indicata";
   const observations = voiceFacetSummary(entry);
-  const facetsMarkup = observations.length
-    ? `<div class="reflection-observations"><p>Hai osservato anche</p><div>${observations.map(value => `<span>${escapeHTML(value)}</span>`).join("")}</div></div>`
-    : "";
   const previous = loadVoiceDiary().find(item => item.date < entry.date);
   const diaryComparison = previous
-    ? `<p class="reflection-previous">Nella traccia del ${formatDiaryDate(previous.date)} avevi scelto: ${previous.words.length ? previous.words.map(escapeHTML).join(" · ") : "altre sensazioni"}. Non è un confronto di risultati, solo un modo per riconoscere ciò che cambia.</p>`
+    ? `<p class="reflection-previous">Nella traccia del ${formatDiaryDate(previous.date)} avevi scelto: ${previous.words.length ? previous.words.map(escapeHTML).join(" · ") : "altre sensazioni"}. Non è un confronto di risultati: è una possibilità per osservare ciò che cambia.</p>`
     : "";
-
   return `
     <section class="voice-reflection ${type}" data-voice-intent="${intent}" tabindex="-1" aria-labelledby="reflection-title">
-      <p class="content-kicker"><span>${intent === "note" ? "La tua traccia" : intent === "listen" ? "Ascoltarmi · senza voce" : "Esplorare · una piccola prova"}</span></p>
-      <h3 id="reflection-title">${reflection.title}</h3>
-      ${words}${ownWords}${facetsMarkup}
-      <p class="reflection-copy">${reflection.copy}</p>
-      ${intent === "note" ? "" : `
-      <div class="micro-practice" data-reflection-practice>
-        <p>${reflection.practice}</p>
+      <div class="reflection-art" aria-hidden="true"></div>
+      <p class="content-kicker">La tua voce di oggi <span>· ${formatDiaryDate(entry.date)}</span></p>
+      <h3 id="reflection-title">Grazie.<br>Hai lasciato<br>una traccia.</h3>
+      <p class="reflection-lead">Ecco cosa emerge dal tuo ascolto, senza giudizi e senza voti.</p>
+      <div class="reflection-summary">
+        <div class="reflection-summary-item">
+          <span class="reflection-summary-icon" aria-hidden="true">◌</span>
+          <span><small>Parole scelte</small><strong>${words}</strong></span>
+        </div>
+        <div class="reflection-summary-item">
+          <span class="reflection-summary-icon" aria-hidden="true">◎</span>
+          <span><small>Dove la senti di più</small><strong>${chosenLocations}</strong></span>
+        </div>
+        <div class="reflection-summary-item">
+          <span class="reflection-summary-icon" aria-hidden="true">≈</span>
+          <span><small>La tua direzione</small><strong>${escapeHTML(VOICE_INTENTS[intent])}</strong></span>
+        </div>
       </div>
-      <button class="outline-button" type="button" data-practice-toggle aria-expanded="false">
-        Apri il timer di un minuto <span aria-hidden="true">＋</span>
-      </button>
-      <div class="practice-timer" hidden>
-        <button class="minute-button" type="button" data-minute-start>
-          Avvia il minuto <span data-minute-label>1:00</span>
-        </button>
-        <p class="minute-status" data-minute-status aria-live="polite"></p>
-      </div>`}
-      ${diaryComparison}
-      <p class="proposal-note">${intent === "note" ? "Questa traccia resta su questo dispositivo. Puoi modificarla quando vuoi." : "Uno spunto generale, non una valutazione della tua voce. Puoi fermarti o saltarlo in qualsiasi momento."}</p>
+      ${entry.note ? `<p class="reflection-note">“${escapeHTML(entry.note)}”</p>` : ""}
+      ${observations.length ? `<div class="reflection-observations"><p>Altre sfumature che hai osservato</p><div>${observations.map(value => `<span>${escapeHTML(value)}</span>`).join("")}</div></div>` : ""}
+      <div class="reflection-invitation">
+        <h4>${reflection.title}</h4>
+        <p class="reflection-copy">${reflection.copy}</p>
+        ${intent === "note" ? "" : `
+          <div class="micro-practice" data-reflection-practice><p>${reflection.practice}</p></div>
+          <button class="outline-button" type="button" data-practice-toggle aria-expanded="false">
+            Apri un minuto di ascolto <span aria-hidden="true">＋</span>
+          </button>
+          <div class="practice-timer" hidden>
+            <button class="minute-button" type="button" data-minute-start>Avvia il minuto <span data-minute-label>1:00</span></button>
+            <p class="minute-status" data-minute-status aria-live="polite"></p>
+          </div>`}
+        ${diaryComparison}
+      </div>
+      <button class="reflection-diary-link" type="button" data-open-voice-diary>Ritrova le tue tracce <span aria-hidden="true">→</span></button>
+      <p class="proposal-note">Le osservazioni sono soggettive, non un'analisi acustica o clinica. Il diario rimane solo su questo dispositivo.</p>
     </section>`;
 }
 
@@ -552,24 +562,33 @@ function formatDiaryDate(day) {
   return new Intl.DateTimeFormat("it-IT", { day: "numeric", month: "short" }).format(date);
 }
 
-function voiceDiaryMarkup() {
-  const diary = loadVoiceDiary();
-  if (!diary.length) return "";
-  return `
-    <details class="voice-diary">
-      <summary><span>Il mio diario della voce</span><strong>${diary.length}</strong></summary>
-      <p class="diary-intro">Niente voti e niente serie da mantenere. Solo tracce dei giorni in cui hai scelto di ascoltarti.</p>
+function voiceDiaryMarkup(){
+ const diary = loadVoiceDiary();
+ if (!diary.length) return "";
+ return `
+    <details class="voice-diary" open>
+      <summary><span>Le tue ultime tracce</span><strong>${diary.length}</strong></summary>
+      <p class="diary-intro">Giorno dopo giorno, ritrova il modo in cui hai sentito la tua voce. Nessuna serie da mantenere.</p>
       <ol>
-        ${diary.map((entry, index) => `
-          <li ${index >= 7 ? 'data-diary-older hidden' : ''}>
-            <time datetime="${escapeHTML(entry.date)}">${formatDiaryDate(entry.date)}</time>
-            <span class="diary-entry">${entry.words.length ? `<span>${entry.words.map(escapeHTML).join(" · ")}</span>` : ""}${voiceFacetSummary(entry).length ? `<small>${voiceFacetSummary(entry).map(escapeHTML).join(" · ")}</small>` : ""}${entry.note ? `<span class="diary-note">${escapeHTML(entry.note)}</span>` : ""}</span>
+        ${diary.map((entry,index)=>`
+          <li ${index >= 5 ? 'data-diary-older hidden' : ''}>
+            <span class="diary-timeline-dot" aria-hidden="true"></span>
+            <div class="diary-timeline-entry">
+              <time datetime="${escapeHTML(entry.date)}">${entry.date === localDayKey() ? "Oggi" : formatDiaryDate(entry.date)}</time>
+              <span class="diary-entry">
+                ${entry.words.length ? `<strong>“${entry.words.map(escapeHTML).join(", ")}”</strong>` : `<strong>La tua voce di questo giorno</strong>`}
+                ${safeVoiceLocations(entry.locations).length ? `<small>${safeVoiceLocations(entry.locations).map(escapeHTML).join(", ")}</small>` : ""}
+                ${voiceFacetSummary(entry).length ? `<small>${voiceFacetSummary(entry).map(escapeHTML).join(" · ")}</small>` : ""}
+                <span class="diary-intent-label">${escapeHTML(VOICE_INTENTS[voiceIntent(entry)])}</span>
+                ${entry.note ? `<span class="diary-note">${escapeHTML(entry.note)}</span>` : ""}
+              </span>
+            </div>
           </li>`).join("")}
       </ol>
-      ${diary.length > 7 ? '<button class="diary-more" type="button" data-diary-more aria-expanded="false">Mostra i giorni precedenti</button>' : ''}
+      ${diary.length > 5 ? '<button class="diary-more" type="button" data-diary-more aria-expanded="false">Vedi tutte le tracce →</button>' : ''}
       <div class="diary-actions">
         <button type="button" data-diary-export>Esporta il diario <span aria-hidden="true">↓</span></button>
-        <button type="button" data-diary-delete>Cancella <span aria-hidden="true">×</span></button>
+        <button type="button" data-diary-delete>Elimina il diario <span aria-hidden="true">×</span></button>
       </div>
     </details>`;
 }
