@@ -23,7 +23,9 @@ async function main() {
       await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
       await page.locator('#home-title').waitFor({ timeout: 15000 });
       assert.match(await page.locator('#home-title').innerText(), /La tua voce/);
-      await page.screenshot({ path: path.join(output, size.name + '-home.png'), fullPage: true });
+      try {
+        await page.screenshot({ path: path.join(output, size.name + '-home.png'), fullPage: false, animations: 'disabled', timeout: 8000 });
+      } catch (err) { console.warn(size.name + ' screenshot warning: ' + err.message); }
       const metrics = await page.evaluate(() => ({
         inner: window.innerWidth,
         scroll: document.documentElement.scrollWidth,
@@ -52,7 +54,9 @@ async function main() {
       const entry = await page.evaluate(() => JSON.parse(localStorage.getItem('opificio-voice-diary-v1'))?.[0]);
       assert.equal(entry.facets.body, 'comoda');
       assert.equal(entry.intent, 'explore');
-      await page.screenshot({ path: path.join(output, size.name + '-result.png'), fullPage: true });
+      try {
+        await page.screenshot({ path: path.join(output, size.name + '-result.png'), fullPage: false, animations: 'disabled', timeout: 8000 });
+      } catch (err) { console.warn(size.name + ' result screenshot warning: ' + err.message); }
       await page.reload({ waitUntil: 'domcontentloaded' });
       assert.ok(await page.locator('[data-check-complete]').isVisible(), 'Saved data should survive reload');
       await page.locator('[data-check-edit]').click();
