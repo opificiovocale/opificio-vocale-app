@@ -63,6 +63,11 @@ async function main() {
       assert.ok(await page.locator('[data-check-step="0"]').isVisible(), 'Editing starts at first step');
       await page.locator('[data-check-next]').click();
       assert.equal(await page.locator('[data-voice-facet="body"][data-voice-value="comoda"]').getAttribute('aria-pressed'), 'true', 'Selected facet should reload');
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+      await page.waitForTimeout(300);
+      try {
+        await page.screenshot({ path: path.join(output, size.name + '-top.png'), fullPage: false, animations: 'disabled', timeout: 8000 });
+      } catch (err) { console.warn(size.name + ' top screenshot warning: ' + err.message); }
       assert.deepEqual(errors, [], 'Unexpected JS errors: ' + JSON.stringify(errors));
       console.log('PASS ' + size.name + ' guided check-in, persistence and re-edit');
       await context.close();
