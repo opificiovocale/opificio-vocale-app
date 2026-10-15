@@ -3774,7 +3774,7 @@ body,
 }
 .home-hero-meta span + span:before { content: "·"; margin-right: 12px; }
 .home-hero-art {
-  position: absolute; z-index: -1;
+  position: absolute; z-index: 0;
   top: 10px; right: -60px; bottom: 5px;
   width: min(43%, 400px); pointer-events: none;
 }
