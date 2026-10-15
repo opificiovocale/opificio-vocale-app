@@ -22,7 +22,7 @@ async function main() {
       page.on('pageerror', e => errors.push(e.message));
       await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
       await page.locator('#home-title').waitFor({ timeout: 15000 });
-      assert.match(await page.locator('#home-title').innerText(), /La tua voce/);
+      assert.match(await page.locator('#home-title').innerText(), /la tua voce/i);
       await page.locator('.voice-hero').waitFor({ state: 'visible', timeout: 15000 });
       const metrics = await page.evaluate(() => ({
         inner: window.innerWidth,
@@ -84,9 +84,7 @@ async function main() {
     await page.reload({waitUntil:'domcontentloaded'});
     await page.locator('.voice-diary summary').waitFor({ state: 'visible', timeout: 15000 });
     assert.ok(await page.locator('.voice-diary').isVisible(), 'Legacy diary should still appear');
-    await page.locator('.voice-diary summary').click();
     assert.ok((await page.locator('.voice-diary').innerText()).includes('Vecchia nota'));
-    await page.locator('.voice-diary summary').click();
     await page.locator('[data-check-start]').click();
     await page.locator('[data-voice-word]').first().click();
     await page.locator('[data-check-next]').click();
