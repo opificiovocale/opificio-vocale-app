@@ -23,9 +23,7 @@ async function main() {
       await page.goto(baseUrl, { waitUntil: 'domcontentloaded' });
       await page.locator('#home-title').waitFor({ timeout: 15000 });
       assert.match(await page.locator('#home-title').innerText(), /La tua voce/);
-      try {
-        await page.screenshot({ path: path.join(output, size.name + '-home.png'), fullPage: false, animations: 'disabled', timeout: 8000 });
-      } catch (err) { console.warn(size.name + ' screenshot warning: ' + err.message); }
+      await page.locator('.voice-hero').waitFor({ state: 'visible', timeout: 15000 });
       const metrics = await page.evaluate(() => ({
         inner: window.innerWidth,
         scroll: document.documentElement.scrollWidth,
