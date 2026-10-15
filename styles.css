@@ -4394,3 +4394,12 @@ body,
 @media (prefers-reduced-motion: reduce) {
   .home-page *, .home-page *:before, .home-page *:after { transition: none !important; animation: none !important; }
 }
+
+
+/* Ordine dell'esperienza: accoglienza, ascolto, ispirazione, esplorazione */
+.home-page .voice-hero { order: 1; }
+.home-page .voice-check-section { order: 2; }
+.home-page .home-inspiration { order: 3; }
+.home-page .home-sections { order: 4; }
+.home-page .communication-slot { order: 5; }
+.home-page .brand-strip { order: 6; }
