@@ -31,8 +31,10 @@ jobs:
         with:
           node-version: 24
 
-      - name: Verifica il progetto
-        run: node --test tests/*.test.*
+      # La sincronizzazione non dipende dai test dell'interfaccia dell'app.
+      # Continuiamo a bloccare l'importazione se falliscono i test MailerLite.
+      - name: Verifica l'importazione MailerLite
+        run: node --test tests/manifesti-import.test.mjs
 
       - name: Leggi le campagne inviate
         env:
